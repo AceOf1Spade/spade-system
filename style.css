@@ -917,3 +917,43 @@ textarea{min-height:110px;resize:vertical} label{display:block;color:var(--soft)
   .stage-elite .shade-cloak{width:86px;top:101px}
   .stage-mythic .shade-cloak{width:90px;top:105px}
 }
+
+
+/* =========================================
+   SPADE SYSTEM V1.4 · TRAINING ENGINE
+========================================= */
+
+.training-overview{display:flex;flex-direction:column;gap:12px}
+.training-main-actions{margin:14px 0}
+.training-main-actions .primary-btn{flex:1;min-height:48px}
+.training-unlocks-panel{margin-top:4px}
+.technique-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:12px}
+.technique-tier{padding:10px 7px;border-radius:12px;background:var(--panel2);border:1px solid var(--border);text-align:center;min-width:0}
+.technique-tier strong{display:block;font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.technique-tier span{display:block;color:var(--accent2);font-size:.72rem;font-weight:800;margin-top:3px}
+
+.training-header-card{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px;border-radius:16px;background:linear-gradient(145deg,rgba(157,108,255,.12),rgba(255,255,255,.02));border:1px solid rgba(157,108,255,.22)}
+.training-progress{height:7px;margin:12px 0 16px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.training-progress>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:inherit;transition:.25s}
+.training-exercise-list{display:flex;flex-direction:column;gap:12px}
+.training-exercise{padding:14px;border-radius:18px;background:var(--panel);border:1px solid var(--border);transition:.2s}
+.training-exercise.exercise-complete{border-color:rgba(100,217,139,.3);background:linear-gradient(145deg,rgba(100,217,139,.06),var(--panel))}
+.set-count{min-width:42px;padding:7px 9px;border-radius:999px;text-align:center;background:var(--accentSoft);color:var(--accent2);font-size:.7rem;font-weight:900}
+.set-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px}
+.set-entry input{min-width:0}
+.logged-sets{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.logged-sets span{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--border);font-size:.66rem;color:var(--soft)}
+.clear-chip{display:inline-block;margin-top:10px;padding:6px 8px;border-radius:999px;background:rgba(100,217,139,.12);border:1px solid rgba(100,217,139,.22);color:var(--success);font-size:.62rem;font-weight:900;letter-spacing:.08em}
+.finish-training-btn{width:100%;min-height:50px;margin-top:16px}
+.mastery-hint{padding-top:6px}
+.skill-row .secondary-btn[disabled]{opacity:.35}
+
+@media(max-width:520px){
+  .technique-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .technique-tier:last-child{grid-column:span 2}
+  .training-header-card{flex-direction:column}
+  .training-header-card .secondary-btn{width:100%}
+  .set-entry{grid-template-columns:1fr}
+  .set-entry .primary-btn{min-height:44px}
+  .training-exercise{padding:12px}
+}

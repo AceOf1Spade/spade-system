@@ -86,6 +86,96 @@ const shadeMessages = [
   "Handle the highest-priority deadline first."
 ];
 
+const TRAINING_DIFFICULTIES=["Beginner","Intermediate","Hard","Very Hard","Expert"];
+
+const exerciseLibrary = [
+  {id:"incline_diamond_pushup",name:"Incline Diamond Push-Up",family:"Push",focus:"Chest / Triceps",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"strength"},
+  {id:"pushup",name:"Push-Up",family:"Push",focus:"Chest / Triceps / Shoulders",difficulty:"Beginner",metric:"reps",target:12,sets:3,stat:"strength"},
+  {id:"bench_dip",name:"Bench Dip",family:"Push",focus:"Triceps",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"strength"},
+  {id:"straight_arm_side_plank_raise",name:"Straight-Arm Side Plank Raise",family:"Push",focus:"Shoulders / Core",difficulty:"Beginner",metric:"reps",target:8,sets:2,stat:"agility"},
+  {id:"dumbbell_bench_press",name:"Dumbbell Bench Press",family:"Push",focus:"Chest",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"strength"},
+  {id:"dumbbell_shoulder_press",name:"Dumbbell Shoulder Press",family:"Push",focus:"Shoulders",difficulty:"Beginner",metric:"reps",target:8,sets:3,stat:"strength"},
+  {id:"dumbbell_lateral_raise",name:"Dumbbell Lateral Raise",family:"Push",focus:"Shoulders",difficulty:"Beginner",metric:"reps",target:10,sets:2,stat:"strength"},
+  {id:"pike_pushup",name:"Pike Push-Up",family:"Push",focus:"Shoulders / Chest",difficulty:"Intermediate",metric:"reps",target:8,sets:3,stat:"strength",requires:["pushup"]},
+  {id:"dip",name:"Dips",family:"Push",focus:"Chest / Triceps",difficulty:"Intermediate",metric:"reps",target:8,sets:3,stat:"strength",requires:["bench_dip"]},
+  {id:"explosive_pushup",name:"Explosive Push-Up",family:"Push",focus:"Chest / Power",difficulty:"Intermediate",metric:"reps",target:5,sets:3,stat:"strength",requires:["pushup"]},
+  {id:"wall_walk",name:"Wall Walk",family:"Push",focus:"Shoulders / Body Control",difficulty:"Intermediate",metric:"reps",target:3,sets:3,stat:"agility",requires:["pike_pushup"]},
+  {id:"hindu_pushup",name:"Hindu Push-Up",family:"Push",focus:"Chest / Shoulders / Mobility",difficulty:"Intermediate",metric:"reps",target:8,sets:3,stat:"agility"},
+  {id:"straight_bar_dip",name:"Straight Bar Dip",family:"Push",focus:"Chest / Triceps",difficulty:"Hard",metric:"reps",target:8,sets:3,stat:"strength",requires:["dip"]},
+  {id:"archer_pushup",name:"Archer Push-Up",family:"Push",focus:"Chest / Unilateral Strength",difficulty:"Hard",metric:"reps",target:6,sets:3,stat:"strength",requires:["pushup","explosive_pushup"]},
+  {id:"elevated_pike_pushup",name:"Elevated Pike Push-Up",family:"Push",focus:"Shoulders",difficulty:"Hard",metric:"reps",target:6,sets:3,stat:"strength",requires:["pike_pushup"]},
+  {id:"handstand_pushup",name:"Handstand Push-Up",family:"Push",focus:"Shoulders / Upper Body",difficulty:"Very Hard",metric:"reps",target:3,sets:3,stat:"strength",requires:["wall_walk","elevated_pike_pushup"]},
+  {id:"one_arm_pushup",name:"One-Arm Push-Up",family:"Push",focus:"Chest / Triceps / Core",difficulty:"Expert",metric:"reps",target:3,sets:3,stat:"strength",requires:["archer_pushup"]},
+
+  {id:"passive_hang",name:"Passive Hang",family:"Pull",focus:"Grip / Shoulders",difficulty:"Beginner",metric:"seconds",target:30,sets:2,stat:"strength"},
+  {id:"high_body_row",name:"High Body Row",family:"Pull",focus:"Back / Biceps",difficulty:"Beginner",metric:"reps",target:12,sets:3,stat:"strength"},
+  {id:"db_single_arm_row",name:"Single-Arm Dumbbell Row",family:"Pull",focus:"Back",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"strength"},
+  {id:"db_bicep_curl",name:"Dumbbell Bicep Curl",family:"Pull",focus:"Biceps",difficulty:"Beginner",metric:"reps",target:10,sets:2,stat:"strength"},
+  {id:"hammer_curl",name:"Hammer Curl",family:"Pull",focus:"Biceps / Forearms",difficulty:"Beginner",metric:"reps",target:10,sets:2,stat:"strength"},
+  {id:"low_body_row",name:"Low Body Row",family:"Pull",focus:"Back / Biceps",difficulty:"Intermediate",metric:"reps",target:10,sets:3,stat:"strength",requires:["high_body_row"]},
+  {id:"pullup",name:"Pull-Up",family:"Pull",focus:"Back / Lats / Biceps",difficulty:"Intermediate",metric:"reps",target:5,sets:3,stat:"strength",requires:["high_body_row","passive_hang"]},
+  {id:"chinup",name:"Chin-Up",family:"Pull",focus:"Biceps / Lats",difficulty:"Intermediate",metric:"reps",target:5,sets:3,stat:"strength",requires:["high_body_row"]},
+  {id:"australian_face_pull",name:"Australian Face Pull",family:"Pull",focus:"Rear Delts / Upper Back",difficulty:"Intermediate",metric:"reps",target:10,sets:3,stat:"strength"},
+  {id:"typewriter_pullup",name:"Typewriter Pull-Up",family:"Pull",focus:"Back / Control",difficulty:"Hard",metric:"reps",target:4,sets:3,stat:"strength",requires:["pullup"]},
+  {id:"archer_pullup",name:"Archer Pull-Up",family:"Pull",focus:"Back / Unilateral Strength",difficulty:"Very Hard",metric:"reps",target:3,sets:3,stat:"strength",requires:["typewriter_pullup"]},
+  {id:"front_lever_raise",name:"Front Lever Raise",family:"Pull",focus:"Lats / Core",difficulty:"Very Hard",metric:"reps",target:4,sets:3,stat:"strength",requires:["pullup"]},
+
+  {id:"squat",name:"Bodyweight Squat",family:"Legs",focus:"Quads / Glutes",difficulty:"Beginner",metric:"reps",target:15,sets:3,stat:"strength"},
+  {id:"reverse_lunge",name:"Reverse Lunge",family:"Legs",focus:"Quads / Glutes",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"strength"},
+  {id:"glute_bridge",name:"Glute Bridge",family:"Legs",focus:"Glutes / Hamstrings",difficulty:"Beginner",metric:"reps",target:12,sets:3,stat:"strength"},
+  {id:"calf_raise",name:"Calf Raise",family:"Legs",focus:"Calves",difficulty:"Beginner",metric:"reps",target:15,sets:3,stat:"strength"},
+  {id:"goblet_squat",name:"Dumbbell Goblet Squat",family:"Legs",focus:"Quads / Glutes",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"strength"},
+  {id:"db_rdl",name:"Dumbbell Romanian Deadlift",family:"Legs",focus:"Hamstrings / Glutes",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"strength"},
+  {id:"jump_squat",name:"Jump Squat",family:"Legs",focus:"Explosive Legs",difficulty:"Intermediate",metric:"reps",target:8,sets:3,stat:"agility",requires:["squat"]},
+  {id:"bulgarian_split_squat",name:"Bulgarian Split Squat",family:"Legs",focus:"Quads / Glutes",difficulty:"Intermediate",metric:"reps",target:8,sets:3,stat:"strength",requires:["reverse_lunge"]},
+  {id:"single_leg_rdl",name:"Single-Leg Romanian Deadlift",family:"Legs",focus:"Hamstrings / Balance",difficulty:"Intermediate",metric:"reps",target:8,sets:3,stat:"agility",requires:["db_rdl"]},
+  {id:"box_jump",name:"Box Jump",family:"Legs",focus:"Explosive Power",difficulty:"Intermediate",metric:"reps",target:5,sets:3,stat:"agility",requires:["squat"]},
+  {id:"assisted_pistol",name:"Assisted Pistol Squat",family:"Legs",focus:"Single-Leg Strength",difficulty:"Hard",metric:"reps",target:6,sets:3,stat:"strength",requires:["bulgarian_split_squat"]},
+  {id:"pistol_squat",name:"Pistol Squat",family:"Legs",focus:"Quads / Balance",difficulty:"Very Hard",metric:"reps",target:5,sets:3,stat:"strength",requires:["assisted_pistol"]},
+
+  {id:"plank",name:"Plank",family:"Core",focus:"Core Stability",difficulty:"Beginner",metric:"seconds",target:30,sets:3,stat:"discipline"},
+  {id:"dead_bug",name:"Dead Bug",family:"Core",focus:"Deep Core",difficulty:"Beginner",metric:"reps",target:8,sets:3,stat:"agility"},
+  {id:"bird_dog",name:"Bird Dog",family:"Core",focus:"Core / Balance",difficulty:"Beginner",metric:"reps",target:8,sets:2,stat:"agility"},
+  {id:"knee_raise",name:"Knee Raise",family:"Core",focus:"Lower Core",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"strength"},
+  {id:"side_plank",name:"Side Plank",family:"Core",focus:"Obliques / Stability",difficulty:"Intermediate",metric:"seconds",target:25,sets:2,stat:"discipline",requires:["plank"]},
+  {id:"russian_twist",name:"Russian Twist",family:"Core",focus:"Rotational Core",difficulty:"Intermediate",metric:"reps",target:16,sets:3,stat:"agility"},
+  {id:"hollow_hold",name:"Hollow Body Hold",family:"Core",focus:"Total Core",difficulty:"Intermediate",metric:"seconds",target:20,sets:3,stat:"strength",requires:["plank"]},
+  {id:"vup",name:"V-Up",family:"Core",focus:"Abs / Compression",difficulty:"Hard",metric:"reps",target:8,sets:3,stat:"strength",requires:["hollow_hold"]},
+
+  {id:"cat_cow",name:"Cat-Cow",family:"Mobility",focus:"Spine",difficulty:"Beginner",metric:"reps",target:8,sets:1,stat:"agility"},
+  {id:"shoulder_cars",name:"Shoulder CARs",family:"Mobility",focus:"Shoulders",difficulty:"Beginner",metric:"reps",target:5,sets:1,stat:"agility"},
+  {id:"hip_9090",name:"90/90 Hip Switch",family:"Mobility",focus:"Hips",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility"},
+  {id:"ankle_rocks",name:"Ankle Rocks",family:"Mobility",focus:"Ankles",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility"},
+  {id:"worlds_greatest",name:"World's Greatest Stretch",family:"Mobility",focus:"Full Body",difficulty:"Beginner",metric:"reps",target:5,sets:1,stat:"agility"},
+  {id:"deep_squat_hold",name:"Deep Squat Hold",family:"Mobility",focus:"Hips / Ankles",difficulty:"Intermediate",metric:"seconds",target:30,sets:2,stat:"agility"},
+  {id:"cossack_squat",name:"Cossack Squat",family:"Mobility",focus:"Hips / Adductors",difficulty:"Intermediate",metric:"reps",target:6,sets:2,stat:"agility",requires:["hip_9090"]},
+  {id:"single_leg_stand",name:"Single-Leg Stand",family:"Balance",focus:"Balance",difficulty:"Beginner",metric:"seconds",target:30,sets:2,stat:"agility"},
+  {id:"heel_toe_walk",name:"Heel-to-Toe Walk",family:"Balance",focus:"Dynamic Balance",difficulty:"Beginner",metric:"reps",target:15,sets:1,stat:"agility"},
+
+  {id:"jumping_jacks",name:"Jumping Jacks",family:"Conditioning",focus:"Cardio",difficulty:"Beginner",metric:"seconds",target:45,sets:3,stat:"endurance"},
+  {id:"mountain_climbers",name:"Mountain Climbers",family:"Conditioning",focus:"Cardio / Core",difficulty:"Beginner",metric:"seconds",target:30,sets:3,stat:"endurance"},
+  {id:"steady_jog",name:"Steady Jog / Run",family:"Conditioning",focus:"Aerobic Base",difficulty:"Beginner",metric:"minutes",target:10,sets:1,stat:"endurance"},
+  {id:"burpee",name:"Burpees",family:"Conditioning",focus:"Full Body",difficulty:"Intermediate",metric:"reps",target:8,sets:3,stat:"endurance"},
+  {id:"sprint_interval",name:"Sprint Intervals",family:"Conditioning",focus:"Anaerobic Power",difficulty:"Hard",metric:"seconds",target:20,sets:6,stat:"endurance",requires:["steady_jog"]},
+  {id:"bag_jab",name:"Heavy Bag: Jab Only",family:"Combat",focus:"Jab Mechanics",difficulty:"Beginner",metric:"seconds",target:60,sets:3,stat:"agility"},
+  {id:"bag_fixed_punch",name:"Heavy Bag: Fixed Punch Drill",family:"Combat",focus:"Technique",difficulty:"Beginner",metric:"seconds",target:60,sets:3,stat:"agility"},
+  {id:"bag_12_exit",name:"Heavy Bag: 1-2, Exit, Re-Enter",family:"Combat",focus:"Footwork / Range",difficulty:"Intermediate",metric:"seconds",target:90,sets:3,stat:"agility",requires:["bag_jab"]},
+  {id:"bag_slip_combo",name:"Heavy Bag: Punches + Slips",family:"Combat",focus:"Defense / Head Movement",difficulty:"Intermediate",metric:"seconds",target:90,sets:3,stat:"agility",requires:["bag_jab"]},
+  {id:"bag_stepback_counter",name:"Heavy Bag: Step-Back Counter",family:"Combat",focus:"Defense / Countering",difficulty:"Hard",metric:"seconds",target:90,sets:3,stat:"agility",requires:["bag_12_exit","bag_slip_combo"]},
+  {id:"bag_feint_counter",name:"Heavy Bag: Feint, Attack, Defend, Counter",family:"Combat",focus:"Decision Making",difficulty:"Very Hard",metric:"seconds",target:120,sets:3,stat:"agility",requires:["bag_stepback_counter"]}
+];
+
+const WEEKLY_TRAINING_PROTOCOL = {
+  0:{name:"Recovery Protocol",families:["Mobility","Balance","Core"],intensity:"Recovery"},
+  1:{name:"Upper Body + Conditioning",families:["Push","Pull","Core","Conditioning"],intensity:"Normal"},
+  2:{name:"Lower Body",families:["Legs","Core","Mobility"],intensity:"Normal"},
+  3:{name:"Pull + Core",families:["Pull","Core","Mobility"],intensity:"Normal"},
+  4:{name:"Mobility + Calisthenics Control",families:["Mobility","Balance","Core","Push","Pull"],intensity:"Control"},
+  5:{name:"Athletic Power + Combat",families:["Legs","Conditioning","Combat","Core"],intensity:"Hard"},
+  6:{name:"Full Body / Optional Conditioning",families:["Push","Pull","Legs","Core","Conditioning"],intensity:"Normal"}
+};
+
+
 const defaultData = {
   version:VERSION,
   player:{name:"SPADE",title:"The Creator",level:1,xp:0,requiredXP:100,rank:"E-Rank",coins:0},
@@ -127,6 +217,13 @@ const defaultData = {
     ]
   },
   workouts:[],
+  training:{
+    completedSessions:0,
+    readiness:{date:null,energy:3,soreness:1,time:60},
+    exerciseProgress:{},
+    activeWorkout:null,
+    lastGenerated:null
+  },
   nutrition:{today:null,protein:0,water:0,meals:[],proteinTarget:120,waterTarget:96},
   calendarEvents:[],
   legacy:{quests:0,skillsMastered:0,bosses:0,dungeons:0,perfectClears:0,workouts:0,learningHours:0,performances:0,projects:0,skillIncome:0,longestStreak:0},
@@ -467,7 +564,12 @@ function progressDungeon(id){
 function renderSkills(){
   document.getElementById("coreStatGrid").innerHTML=Object.entries(data.stats).map(([k,s])=>`<div class="stat-card"><p class="eyebrow">${k}</p><strong>${s.level}</strong><div class="mini-progress"><div class="mini-progress-fill" style="width:${s.xp/statRequired(s.level)*100}%"></div></div><p class="meta">${s.xp}/${statRequired(s.level)} stat XP</p></div>`).join("");
   const byBranch={};Object.values(data.skills).forEach(s=>(byBranch[s.branch]??=[]).push(s));
-  document.getElementById("skillTrees").innerHTML=Object.entries(byBranch).map(([branch,skills])=>`<details class="skill-branch"><summary>${esc(branch)} · ${skills.filter(s=>s.state==="Mastered").length}/${skills.length} mastered</summary><div class="skill-list">${skills.map(s=>`<div class="skill-row"><div class="row-between"><div><strong>${esc(s.name)}</strong><p class="meta rarity-${s.rarity.toLowerCase()}">${s.rarity}</p></div><span class="skill-state">${s.state}</span></div><div class="mini-progress"><div class="mini-progress-fill" style="width:${Math.min(100,s.xp/100*100)}%"></div></div><p class="meta">${s.xp}/100 skill XP · ${s.practice} sessions</p><div class="card-actions"><button class="secondary-btn" data-practice-skill="${s.id}" ${s.state==="Locked"?"disabled":""}>Log Practice</button></div></div>`).join("")}</div></details>`).join("");
+  document.getElementById("skillTrees").innerHTML=Object.entries(byBranch).map(([branch,skills])=>`<details class="skill-branch"><summary>${esc(branch)} · ${skills.filter(s=>s.state==="Mastered").length}/${skills.length} mastered</summary><div class="skill-list">${skills.map(s=>{
+    s.practiceDays=s.practiceDays||[];
+    const reqSessions=5,reqDays=3;
+    const masteryReady=s.xp>=100&&s.practice>=reqSessions&&s.practiceDays.length>=reqDays;
+    return `<div class="skill-row"><div class="row-between"><div><strong>${esc(s.name)}</strong><p class="meta rarity-${s.rarity.toLowerCase()}">${s.rarity}</p></div><span class="skill-state">${s.state}</span></div><div class="mini-progress"><div class="mini-progress-fill" style="width:${Math.min(100,s.xp)}%"></div></div><p class="meta">${s.xp}/100 skill XP · ${s.practice} sessions · ${s.practiceDays.length}/${reqDays} days</p>${s.state!=="Mastered"?`<p class="meta mastery-hint">${masteryReady?"Mastery requirements satisfied. Log a successful session to confirm mastery.":`Mastery needs 100 XP, ${reqSessions} sessions, and ${reqDays} separate days.`}</p>`:""}<div class="card-actions"><button class="secondary-btn" data-practice-skill="${s.id}" ${s.state==="Locked"?"disabled":""}>Log Progress</button></div></div>`;
+  }).join("")}</div></details>`).join("");
   const specs=[
     ["Artist",avg(["creativity","intellect"])],
     ["Performer",avg(["creativity","charisma"])],
@@ -479,11 +581,44 @@ function renderSkills(){
   document.getElementById("specializationList").innerHTML=`<div class="list-stack">${specs.map(([n,v])=>`<div class="list-card"><div class="row-between"><strong>${n}</strong><span>${v}</span></div><div class="mini-progress"><div class="mini-progress-fill" style="width:${Math.min(100,v/25*100)}%"></div></div></div>`).join("")}</div>`;
 }
 function avg(keys){return Math.round(keys.reduce((a,k)=>a+data.stats[k].level,0)/keys.length);}
-function practiceSkill(id){
+
+function openSkillProgress(id){
   const s=data.skills[id];if(!s||s.state==="Locked")return;
-  s.practice++;s.xp+=20;s.lastPracticed=todayKey();addXP(10);addStat(statForBranch(s.branch),8);
-  if(s.xp>=100){s.xp=100;s.state="Mastered";data.legacy.skillsMastered=Object.values(data.skills).filter(x=>x.state==="Mastered").length;unlockRelatedSkills(s.branch);companionBond(3);toast(`SKILL MASTERED · ${s.name}`);}
-  else if(s.xp>=70)s.state="Proficient";else if(s.xp>=40)s.state="Developing";else s.state="Learning";
+  s.practiceDays=s.practiceDays||[];
+  openModal(`Log ${s.name} Progress`,`<form id="skillProgressForm" data-skill-id="${s.id}">
+    <div class="list-card"><div class="row-between"><strong>${esc(s.name)}</strong><span>${esc(s.state)}</span></div><p class="meta">${s.xp}/100 Skill XP · ${s.practice} sessions · ${s.practiceDays.length} practice days</p></div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="field"><label>Practice Minutes</label><input name="minutes" type="number" min="1" max="240" value="20" required></div>
+      <div class="field"><label>Quality</label><select name="quality"><option value="1">Light / Review</option><option value="2" selected>Solid Practice</option><option value="3">Strong Session</option></select></div>
+    </div>
+    <div class="field"><label>Measured Result (optional)</label><input name="result" placeholder="Example: 6 pull-ups, 42 WPM, practiced transitions"></div>
+    <div class="field"><label>Notes</label><textarea name="notes" placeholder="What did you actually practice?"></textarea></div>
+    <button class="primary-btn" type="submit">Record Progress</button>
+  </form>`,"SKILL PROGRESS");
+}
+
+function recordSkillProgress(id,minutes,quality,result,notes){
+  const s=data.skills[id];if(!s||s.state==="Locked")return;
+  s.practiceDays=s.practiceDays||[];
+  s.logs=s.logs||[];
+  const day=todayKey();
+  if(!s.practiceDays.includes(day))s.practiceDays.push(day);
+  s.practice++;
+  const gain=Math.min(20,Math.max(5,Math.round(minutes/5)+quality*2));
+  s.xp=Math.min(100,s.xp+gain);
+  s.lastPracticed=day;
+  s.logs.unshift({date:day,minutes,quality,result,notes,xp:gain});
+  addXP(Math.max(5,Math.round(gain/2)));
+  addStat(statForBranch(s.branch),Math.max(3,Math.round(gain/3)));
+  if(s.xp>=100&&s.practice>=5&&s.practiceDays.length>=3){
+    s.state="Mastered";
+    data.legacy.skillsMastered=Object.values(data.skills).filter(x=>x.state==="Mastered").length;
+    unlockRelatedSkills(s.branch);
+    companionBond(3);
+    toast(`SKILL MASTERED · ${s.name}`);
+  } else if(s.xp>=70)s.state="Proficient";
+  else if(s.xp>=40)s.state="Developing";
+  else s.state="Learning";
   save();initAchievements();renderAll();
 }
 function statForBranch(branch){return ({Strength:"strength",Agility:"agility",Endurance:"endurance",Intellect:"intellect",Discipline:"discipline",Creativity:"creativity",Charisma:"charisma",Combat:"agility"})[branch]||"intellect";}
@@ -567,6 +702,214 @@ function renderShadeTab(tab="overview"){
   }
 }
 
+
+function ensureTraining(){
+  data.training=data.training||{};
+  data.training.completedSessions=Number(data.training.completedSessions||0);
+  data.training.readiness=data.training.readiness||{date:null,energy:3,soreness:1,time:60};
+  data.training.exerciseProgress=data.training.exerciseProgress||{};
+  if(data.training.activeWorkout===undefined)data.training.activeWorkout=null;
+}
+function exerciseProgress(id){
+  ensureTraining();
+  return data.training.exerciseProgress[id]||(data.training.exerciseProgress[id]={sessions:0,totalSets:0,best:0,last:null});
+}
+function difficultyIndex(d){return TRAINING_DIFFICULTIES.indexOf(d);}
+function completedIntermediateCount(){
+  return Object.entries(data.training.exerciseProgress||{}).filter(([id,p])=>{
+    const ex=exerciseLibrary.find(x=>x.id===id);return ex&&difficultyIndex(ex.difficulty)>=1&&p.sessions>=3;
+  }).length;
+}
+function isExerciseUnlocked(ex){
+  ensureTraining();
+  if(ex.difficulty==="Beginner")return true;
+  const prereqs=(ex.requires||[]).every(id=>exerciseProgress(id).sessions>=2);
+  if(!prereqs)return false;
+  const n=data.training.completedSessions;
+  if(ex.difficulty==="Intermediate")return n>=3;
+  if(ex.difficulty==="Hard")return n>=8&&completedIntermediateCount()>=2;
+  if(ex.difficulty==="Very Hard")return n>=16&&completedIntermediateCount()>=4;
+  if(ex.difficulty==="Expert")return n>=28&&completedIntermediateCount()>=6;
+  return false;
+}
+function trainingTier(){
+  ensureTraining();
+  const n=data.training.completedSessions;
+  if(n>=28)return"Expert";
+  if(n>=16)return"Very Hard";
+  if(n>=8)return"Hard";
+  if(n>=3)return"Intermediate";
+  return"Beginner";
+}
+function readinessLabel(r){
+  if(r.soreness>=3||r.energy<=1)return"Recovery";
+  if(r.soreness>=2||r.energy===2)return"Reduced";
+  if(r.energy>=4&&r.soreness===0)return"High";
+  return"Good";
+}
+function poolForFamilies(families){
+  return exerciseLibrary.filter(ex=>families.includes(ex.family)&&isExerciseUnlocked(ex));
+}
+function selectExercises(pool,count,used=new Set()){
+  const out=[];
+  for(const ex of pool){
+    if(out.length>=count)break;
+    if(used.has(ex.id))continue;
+    out.push(ex);used.add(ex.id);
+  }
+  return out;
+}
+function generateRecommendedWorkout(readiness){
+  ensureTraining();
+  const protocol=WEEKLY_TRAINING_PROTOCOL[new Date().getDay()];
+  const state=readinessLabel(readiness);
+  let families=[...protocol.families];
+  let name=protocol.name;
+  if(state==="Recovery"){
+    families=["Mobility","Balance","Core"];
+    name="Recovery & Mobility Protocol";
+  }else if(state==="Reduced"){
+    families=families.filter(f=>f!=="Conditioning"&&f!=="Combat");
+    if(!families.includes("Mobility"))families.push("Mobility");
+    name=`Reduced ${protocol.name}`;
+  }
+  const pool=poolForFamilies(families).sort((a,b)=>difficultyIndex(a.difficulty)-difficultyIndex(b.difficulty));
+  const maxExercises=readiness.time<=30?4:readiness.time<=45?5:readiness.time<=60?6:7;
+  const used=new Set(),chosen=[];
+  for(const fam of families){
+    const choices=pool.filter(e=>e.family===fam);
+    const pick=choices.find(e=>!used.has(e.id));
+    if(pick&&chosen.length<maxExercises){chosen.push(pick);used.add(pick.id);}
+  }
+  if(chosen.length<maxExercises)chosen.push(...selectExercises(pool,maxExercises-chosen.length,used));
+  const exercises=chosen.slice(0,maxExercises).map(ex=>({
+    id:ex.id,name:ex.name,family:ex.family,focus:ex.focus,difficulty:ex.difficulty,
+    metric:ex.metric,target:ex.target,sets:state==="Recovery"?Math.min(ex.sets,2):ex.sets,
+    completedSets:[],skipped:false
+  }));
+  const workout={
+    id:uid("tw"),date:todayKey(),name,
+    readiness:{...readiness,state},tier:trainingTier(),
+    startedAt:new Date().toISOString(),exercises,completed:false
+  };
+  data.training.readiness={date:todayKey(),...readiness};
+  data.training.activeWorkout=workout;
+  data.training.lastGenerated=todayKey();
+  save();
+  return workout;
+}
+function openReadinessCheck(){
+  ensureTraining();
+  openModal("Training Readiness",`<form id="readinessForm">
+    <div class="list-card"><strong>SHADE Calibration</strong><p class="meta">Your answers change today's workout. Recovery is valid progression.</p></div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="field"><label>Energy</label><select name="energy">
+        <option value="1">1 · Drained</option><option value="2">2 · Low</option><option value="3" selected>3 · Normal</option><option value="4">4 · Good</option><option value="5">5 · Excellent</option>
+      </select></div>
+      <div class="field"><label>Soreness</label><select name="soreness">
+        <option value="0">0 · Fresh</option><option value="1" selected>1 · Mild</option><option value="2">2 · Noticeable</option><option value="3">3 · Very Sore</option>
+      </select></div>
+    </div>
+    <div class="field"><label>Time Available</label><select name="time"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option><option value="75">75 min</option><option value="90">90 min</option></select></div>
+    <button class="primary-btn" type="submit">Generate Today's Training</button>
+  </form>`,"TRAINING ENGINE");
+}
+function targetText(ex){return `${ex.sets} × ${ex.target} ${ex.metric}`;}
+function renderActiveWorkout(){
+  ensureTraining();
+  const w=data.training.activeWorkout;
+  if(!w){openReadinessCheck();return;}
+  const done=w.exercises.reduce((a,e)=>a+e.completedSets.length,0);
+  const total=w.exercises.reduce((a,e)=>a+e.sets,0);
+  openModal(w.name,`
+    <div class="training-header-card">
+      <div><p class="eyebrow">ACTIVE TRAINING</p><h3>${esc(w.readiness.state)} Readiness · ${esc(w.tier)} Tier</h3><p class="meta">${done}/${total} sets logged</p></div>
+      <button class="secondary-btn" data-abandon-workout>Regenerate</button>
+    </div>
+    <div class="training-progress"><div style="width:${total?done/total*100:0}%"></div></div>
+    <div class="training-exercise-list">
+      ${w.exercises.map((ex,i)=>{
+        const complete=ex.completedSets.length>=ex.sets;
+        return `<article class="training-exercise ${complete?"exercise-complete":""}">
+          <div class="row-between">
+            <div><p class="eyebrow">${esc(ex.family)} · ${esc(ex.difficulty)}</p><h3>${esc(ex.name)}</h3><p class="meta">${esc(ex.focus)} · Target ${targetText(ex)}</p></div>
+            <span class="set-count">${ex.completedSets.length}/${ex.sets}</span>
+          </div>
+          ${ex.completedSets.length?`<div class="logged-sets">${ex.completedSets.map((v,n)=>`<span>Set ${n+1}: ${v}</span>`).join("")}</div>`:""}
+          ${complete?`<div class="clear-chip">EXERCISE CLEAR</div>`:`<div class="set-entry"><input inputmode="decimal" id="setValue_${i}" placeholder="${ex.target} ${ex.metric}" type="number" min="0" step="0.1"><button class="primary-btn" data-log-training-set="${i}">Log Set</button></div>`}
+          <div class="card-actions">${!complete?`<button class="secondary-btn" data-rest-timer="60">60s Rest</button><button class="secondary-btn" data-rest-timer="90">90s Rest</button>`:""}</div>
+        </article>`;
+      }).join("")}
+    </div>
+    <button class="primary-btn finish-training-btn" data-finish-training>Finish Training</button>
+  `,"LIVE WORKOUT");
+}
+function logTrainingSet(index){
+  const w=data.training.activeWorkout;if(!w)return;
+  const ex=w.exercises[index];if(!ex||ex.completedSets.length>=ex.sets)return;
+  const input=document.getElementById(`setValue_${index}`),value=Number(input?.value);
+  if(!(value>0)){toast("ENTER THE REPS / TIME YOU ACTUALLY COMPLETED");return;}
+  ex.completedSets.push(value);save();renderActiveWorkout();
+}
+let restTimerInterval=null;
+function startRestTimer(seconds){
+  clearInterval(restTimerInterval);
+  let left=seconds;
+  toast(`REST · ${left}s`);
+  restTimerInterval=setInterval(()=>{left--;const t=document.getElementById("systemToast");if(t){t.textContent=`REST · ${left}s`;t.style.display="block";}if(left<=0){clearInterval(restTimerInterval);toast("REST COMPLETE · NEXT SET");}},1000);
+}
+function updateExerciseProgressFromWorkout(ex){
+  const p=exerciseProgress(ex.id);
+  if(ex.completedSets.length===0)return;
+  p.sessions++;p.totalSets+=ex.completedSets.length;p.last=todayKey();
+  p.best=Math.max(p.best||0,...ex.completedSets);
+}
+function trainingSkillKey(ex){
+  const map={Push:"Push-Ups",Pull:"Pull-Ups",Legs:"Weight Training",Core:"Core Strength",Mobility:"Mobility",Balance:"Coordination",Conditioning:"Running",Combat:"Stance & Guard"};
+  return map[ex.family]||null;
+}
+function applyWorkoutSkillProgress(ex){
+  const name=trainingSkillKey(ex);if(!name)return;
+  const s=Object.values(data.skills).find(x=>x.name===name);
+  if(!s||s.state==="Locked")return;
+  s.practiceDays=s.practiceDays||[];s.logs=s.logs||[];
+  const day=todayKey();if(!s.practiceDays.includes(day))s.practiceDays.push(day);
+  s.practice++;const gain=Math.min(12,4+ex.completedSets.length*2);s.xp=Math.min(100,s.xp+gain);
+  s.logs.unshift({date:day,minutes:0,quality:2,result:`${ex.name}: ${ex.completedSets.join(", ")}`,notes:"Auto-logged from Training Engine",xp:gain});
+  if(s.xp>=100&&s.practice>=5&&s.practiceDays.length>=3){s.state="Mastered";unlockRelatedSkills(s.branch);}
+  else if(s.xp>=70)s.state="Proficient";else if(s.xp>=40)s.state="Developing";else s.state="Learning";
+}
+function finishActiveWorkout(){
+  ensureTraining();const w=data.training.activeWorkout;if(!w)return;
+  const logged=w.exercises.filter(e=>e.completedSets.length>0);
+  if(!logged.length){toast("LOG AT LEAST ONE REAL SET FIRST");return;}
+  logged.forEach(ex=>{updateExerciseProgressFromWorkout(ex);applyWorkoutSkillProgress(ex);});
+  const totalSets=logged.reduce((a,e)=>a+e.completedSets.length,0);
+  const xp=Math.min(60,15+totalSets*2);
+  const minutes=Math.max(10,Math.round((Date.now()-new Date(w.startedAt).getTime())/60000));
+  data.workouts.push({id:w.id,name:w.name,minutes,difficulty:w.readiness.state==="High"?"Hard":w.readiness.state==="Recovery"?"Easy":"Normal",notes:`Training Engine · ${logged.length}/${w.exercises.length} exercises · ${totalSets} sets`,date:todayKey(),exerciseLog:logged});
+  data.training.completedSessions++;
+  data.legacy.workouts++;
+  addXP(xp);addStat("discipline",5);
+  const stats=new Set(logged.map(e=>exerciseLibrary.find(x=>x.id===e.id)?.stat).filter(Boolean));
+  stats.forEach(s=>addStat(s,8));
+  progressWeekly("Consistency Protocol");
+  data.timeline.unshift({date:todayKey(),text:`Training cleared: ${w.name}`});
+  data.training.activeWorkout=null;
+  save();renderAll();closeModal();toast(`TRAINING CLEAR · +${xp} XP`);
+}
+function trainingSummaryHtml(){
+  ensureTraining();
+  const tier=trainingTier(),unlocked=exerciseLibrary.filter(isExerciseUnlocked).length;
+  const protocol=WEEKLY_TRAINING_PROTOCOL[new Date().getDay()];
+  return `<div class="training-overview">
+    <div class="quick-grid">
+      <div class="quick-card"><span class="quick-label">TRAINING TIER</span><strong class="quick-value">${tier}</strong><span class="quick-subtext">${data.training.completedSessions} sessions</span></div>
+      <div class="quick-card"><span class="quick-label">TECHNIQUES</span><strong class="quick-value">${unlocked}</strong><span class="quick-subtext">${exerciseLibrary.length} total</span></div>
+    </div>
+    <div class="list-card"><p class="eyebrow">TODAY'S BASE PROTOCOL</p><strong>${esc(protocol.name)}</strong><p class="meta">SHADE adjusts this using soreness, energy, available time, and unlocked techniques.</p></div>
+  </div>`;
+}
 function openModal(title,html,eyebrow="SYSTEM INPUT"){
   setText("modalTitle",title);setText("modalEyebrow",eyebrow);document.getElementById("modalBody").innerHTML=html;
   document.getElementById("modal").classList.add("open");document.body.style.overflow="hidden";
@@ -590,7 +933,9 @@ function openAdd(type){
   } else if(type==="event"){
     openModal("Add Event",`<form id="eventForm"><div class="field"><label>Name</label><input name="name" required></div><div class="form-grid"><div class="field"><label>Date</label><input name="date" type="date" required></div><div class="field"><label>Time</label><input name="time" type="time"></div></div><div class="field"><label>Category</label><input name="category" value="Personal"></div><div class="field"><label>Notes</label><textarea name="notes"></textarea></div><button class="primary-btn">Add Event</button></form>`);
   } else if(type==="workout"){
-    openModal("Log Workout",`<form id="workoutForm"><div class="field"><label>Workout</label><input name="name" placeholder="Upper Body, Run, Mobility..." required></div><div class="form-grid"><div class="field"><label>Minutes</label><input name="minutes" type="number" min="1" value="30"></div><div class="field"><label>Difficulty</label><select name="difficulty"><option>Easy</option><option selected>Normal</option><option>Hard</option></select></div></div><div class="field"><label>Notes</label><textarea name="notes"></textarea></div><button class="primary-btn">Complete Workout</button></form>`);
+    ensureTraining();
+    if(data.training.activeWorkout)renderActiveWorkout();
+    else openReadinessCheck();
   } else if(type==="meal"){
     openModal("Log Meal",`<form id="mealForm"><div class="field"><label>Meal</label><input name="name" required></div><div class="form-grid"><div class="field"><label>Protein (g)</label><input name="protein" type="number" min="0"></div><div class="field"><label>Calories (optional)</label><input name="calories" type="number" min="0"></div></div><button class="primary-btn">Log Meal</button></form>`);
   } else if(type==="weight"){
@@ -618,8 +963,26 @@ function renderCalendarModal(){
   openModal("Calendar",`<button class="small-btn" data-add="event">+ Event</button><div class="list-stack" style="margin-top:12px"><div class="list-card"><strong>Recurring Classes</strong>${classes.map(c=>`<p class="meta">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][c.day]} · ${c.start} · ${esc(c.name)}</p>`).join("")}</div>${data.calendarEvents.map(e=>`<div class="list-card"><strong>${esc(e.name)}</strong><p class="meta">${e.date} · ${e.time||"All Day"} · ${esc(e.category||"Event")}</p></div>`).join("")}</div>`,"CALENDAR");
 }
 function renderFitnessModal(){
-  const hist=data.body.history.slice(-8).reverse();
-  openModal("Fitness & Body",`<div class="quick-grid"><div class="quick-card"><span class="quick-label">HEIGHT</span><strong class="quick-value">${data.body.heightFeet}'${data.body.heightInches}"</strong></div><div class="quick-card"><span class="quick-label">WEIGHT</span><strong class="quick-value">${data.body.weight.toFixed(1)} lb</strong></div></div><div class="card-actions"><button class="primary-btn" data-add="workout">Log Workout</button><button class="secondary-btn" data-add="weight">Log Weight</button></div><div class="list-stack" style="margin-top:14px"><div class="list-card"><strong>Goal</strong><p class="meta">${esc(data.body.goal)}</p></div>${data.workouts.slice(-10).reverse().map(w=>`<div class="list-card"><strong>${esc(w.name)}</strong><p class="meta">${w.date} · ${w.minutes} min · ${w.difficulty}</p></div>`).join("")}${hist.map(h=>`<div class="list-card"><strong>${h.weight} lb</strong><p class="meta">${h.date}</p></div>`).join("")}</div>`,"FITNESS");
+  ensureTraining();
+  const hist=data.body.history.slice(-6).reverse();
+  const recent=data.workouts.slice(-6).reverse();
+  openModal("Fitness & Training",`${trainingSummaryHtml()}
+    <div class="card-actions training-main-actions">
+      <button class="primary-btn" data-start-training>${data.training.activeWorkout?"Resume Workout":"Start Today's Training"}</button>
+      <button class="secondary-btn" data-add="weight">Log Weight</button>
+    </div>
+    <div class="panel training-unlocks-panel">
+      <div class="row-between"><div><p class="eyebrow">TECHNIQUE PROGRESSION</p><h3>Unlocked Library</h3></div><span class="tag">${trainingTier()}</span></div>
+      <div class="technique-strip">${TRAINING_DIFFICULTIES.map(d=>{
+        const total=exerciseLibrary.filter(e=>e.difficulty===d).length,open=exerciseLibrary.filter(e=>e.difficulty===d&&isExerciseUnlocked(e)).length;
+        return `<div class="technique-tier"><strong>${d}</strong><span>${open}/${total}</span></div>`;
+      }).join("")}</div>
+    </div>
+    <div class="list-stack" style="margin-top:14px">
+      <div class="list-card"><strong>Goal</strong><p class="meta">${esc(data.body.goal)} · Fundamentals remain useful even after harder techniques unlock.</p></div>
+      ${recent.map(w=>`<div class="list-card"><div class="row-between"><strong>${esc(w.name)}</strong><span>${w.minutes} min</span></div><p class="meta">${w.date} · ${w.difficulty}${w.exerciseLog?` · ${w.exerciseLog.length} exercises`:""}</p></div>`).join("")}
+      ${hist.map(h=>`<div class="list-card"><strong>${h.weight} lb</strong><p class="meta">${h.date}</p></div>`).join("")}
+    </div>`,"TRAINING");
 }
 function renderNutritionModal(){
   const p=Math.min(100,data.nutrition.protein/data.nutrition.proteinTarget*100),w=Math.min(100,data.nutrition.water/data.nutrition.waterTarget*100);
@@ -652,6 +1015,8 @@ function redeemReward(id){
 }
 
 function handleForms(e){
+  if(e.target.id==="readinessForm"){e.preventDefault();const f=new FormData(e.target);generateRecommendedWorkout({energy:Number(f.get("energy")),soreness:Number(f.get("soreness")),time:Number(f.get("time"))});renderActiveWorkout();return;}
+  if(e.target.id==="skillProgressForm"){e.preventDefault();const f=new FormData(e.target);recordSkillProgress(e.target.dataset.skillId,Number(f.get("minutes")||1),Number(f.get("quality")||2),f.get("result")||"",f.get("notes")||"");closeModal();toast("SKILL PROGRESS RECORDED");return;}
   if(e.target.id==="questForm"){e.preventDefault();const f=new FormData(e.target);data.customQuests.unshift({id:uid("q"),name:f.get("name"),category:f.get("category"),type:f.get("type"),difficulty:f.get("difficulty"),stat:f.get("stat"),date:f.get("date"),notes:f.get("notes"),completed:false});save();closeModal();renderQuestTab("custom");toast("QUEST ADDED");}
   if(e.target.id==="eventForm"){e.preventDefault();const f=new FormData(e.target);data.calendarEvents.push({id:uid("e"),name:f.get("name"),date:f.get("date"),time:f.get("time"),category:f.get("category"),notes:f.get("notes")});save();closeModal();renderAll();toast("EVENT ADDED");}
   if(e.target.id==="workoutForm"){e.preventDefault();const f=new FormData(e.target);const mins=Number(f.get("minutes")||30);data.workouts.push({id:uid("w"),name:f.get("name"),minutes:mins,difficulty:f.get("difficulty"),notes:f.get("notes"),date:todayKey()});data.legacy.workouts++;addXP(f.get("difficulty")==="Hard"?40:25);addStat("strength",15);addStat("endurance",10);addStat("discipline",5);progressWeekly("Consistency Protocol");save();closeModal();renderAll();toast("WORKOUT LOGGED");}
@@ -689,7 +1054,12 @@ document.addEventListener("click",e=>{
   const db=e.target.closest("[data-damage-boss]");if(db){damageBoss(db.dataset.damageBoss);return;}
   if(e.target.closest("[data-generate-dungeon]")){generateDungeon();return;}
   const pd=e.target.closest("[data-progress-dungeon]");if(pd){progressDungeon(pd.dataset.progressDungeon);return;}
-  const ps=e.target.closest("[data-practice-skill]");if(ps){practiceSkill(ps.dataset.practiceSkill);closeModal();return;}
+  const ps=e.target.closest("[data-practice-skill]");if(ps){openSkillProgress(ps.dataset.practiceSkill);return;}
+  if(e.target.closest("[data-start-training]")){ensureTraining();data.training.activeWorkout?renderActiveWorkout():openReadinessCheck();return;}
+  const ls=e.target.closest("[data-log-training-set]");if(ls){logTrainingSet(Number(ls.dataset.logTrainingSet));return;}
+  const rt=e.target.closest("[data-rest-timer]");if(rt){startRestTimer(Number(rt.dataset.restTimer));return;}
+  if(e.target.closest("[data-finish-training]")){finishActiveWorkout();return;}
+  if(e.target.closest("[data-abandon-workout]")){data.training.activeWorkout=null;save();openReadinessCheck();return;}
   const aw=e.target.closest("[data-add-water]");if(aw){data.nutrition.water+=Number(aw.dataset.addWater);save();renderNutritionModal();renderAll();return;}
   const br=e.target.closest("[data-buy-reward]");if(br){redeemReward(br.dataset.buyReward);return;}
   const tab=e.target.closest(".tab");if(tab){
@@ -712,6 +1082,6 @@ document.getElementById("focusButton").addEventListener("click",()=>{
 });
 
 function initialize(){
-  initSkills();initDaily();initWeekly();initNutrition();data.player.requiredXP=requiredXP(data.player.level);data.player.rank=rankFor(data.player.level);renderAll();console.log("♠ SPADE SYSTEM ONLINE",data);
+  ensureTraining();initSkills();initDaily();initWeekly();initNutrition();data.player.requiredXP=requiredXP(data.player.level);data.player.rank=rankFor(data.player.level);renderAll();console.log("♠ SPADE SYSTEM ONLINE",data);
 }
 initialize();
