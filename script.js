@@ -537,21 +537,142 @@ function renderUnlocks(){
   document.getElementById("unlockGrid").innerHTML=list.map(([n,u,t])=>`<div class="unlock-card ${u?"":"locked"}"><div><p class="eyebrow">SYSTEM FEATURE</p><strong>${n}</strong></div><span class="locked-badge">${u?"✓":"🔒"} ${t}</span></div>`).join("");
 }
 
+
+// ===== V1.4.4 SKILL EVENT ENGINE =====
+// Quest completion is evidence too. Training logs remain the authority for measured
+// physical performance; quests primarily credit knowledge, creativity, charisma,
+// and discipline evidence so one action cannot be farmed across every branch.
+const QUEST_SKILL_RULES = {
+  "Attend Today's Class":["Academics","Time Management","Responsibility"],
+  "Attend Today's Classes":["Academics","Time Management","Responsibility"],
+  "Hunter Training":["Routines","Consistency"],
+  "Mobility Protocol":["Mobility","Routines"],
+  "Roadwork":["Running","Routines"],
+  "Pulling Power":["Pull-Ups","Consistency"],
+  "Scholar Session":["Academics","Focus"],
+  "Expand the Vocabulary":["Vocabulary","Focus"],
+  "Keyboard Training":["Typing","Focus"],
+  "Skill Study":["Academics","Focus"],
+  "Creative Session":["Focus","Routines"],
+  "DJ Practice":["DJing","Focus"],
+  "Eight Bars":["Songwriting","Focus"],
+  "Producer's Hour":["Music Production","Focus"],
+  "Priority Target":["Responsibility","Focus"],
+  "Restore Order":["Routines","Responsibility"],
+  "Professional Contact":["Networking","Conversation"],
+  "Speak With Intent":["Speaking","Confidence"],
+  "Consistency Protocol":["Consistency","Routines"],
+  "Scholar's Pace":["Academics","Consistency"],
+  "Creator Cycle":["Consistency","Focus"]
+};
+
+function inferCustomQuestSkills(q){
+  const text=`${q?.name||''} ${q?.category||''} ${q?.notes||''}`.toLowerCase();
+  const out=[];
+  const add=n=>{if(n&&!out.includes(n))out.push(n)};
+  if(/dj|mix|rekordbox|set\b|transition/.test(text))add("DJing");
+  if(/produce|production|beat|logic|fl studio|track/.test(text))add("Music Production");
+  if(/song|lyrics|bars|write music/.test(text))add("Songwriting");
+  if(/vocal|sing|record vocals/.test(text))add("Vocals");
+  if(/design|flyer|graphic|logo|website visual/.test(text))add("Design");
+  if(/content|video|post|social media|tiktok|youtube/.test(text))add("Content Creation");
+  if(/html/.test(text))add("HTML");
+  if(/css/.test(text))add("CSS");
+  if(/javascript|\bjs\b|coding|code\b/.test(text))add("JavaScript");
+  if(/website|web design/.test(text))add("Web Design");
+  if(/study|homework|assignment|class|school|exam|quiz/.test(text))add("Academics");
+  if(/budget|money|finance|saving/.test(text))add("Finance");
+  if(/business|client|quote|invoice|brand/.test(text))add("Business");
+  if(/message|follow.?up|outreach|network|contact/.test(text))add("Networking");
+  if(/perform|gig|show|stage|headliner|mc\b/.test(text))add("Performance");
+  if(/lead|organize|club|team|volunteer/.test(text))add("Leadership");
+  if(/conversation|talk|speak|call/.test(text))add("Conversation");
+  if(/deadline|on time|schedule|appointment/.test(text))add("Time Management");
+  if(/focus|deep work|practice|study|session/.test(text))add("Focus");
+
+  // The selected quest stat is useful supporting evidence, but do not guess a
+  // specific technical skill without textual evidence.
+  const stat=(q?.stat||'').toLowerCase();
+  if(stat==='discipline'&&!out.some(x=>["Routines","Time Management","Focus","Consistency","Responsibility","Self-Control"].includes(x)))add("Responsibility");
+  if(stat==='charisma'&&!out.some(x=>["Conversation","Confidence","Networking","Sales","Performance","Leadership"].includes(x)))add("Confidence");
+  if(stat==='intellect'&&!out.some(x=>["Vocabulary","Grammar","Speaking","Typing","Computer Literacy","HTML","CSS","JavaScript","Web Design","Academics","Business","Finance","Music Theory"].includes(x)))add("Academics");
+  if(stat==='creativity'&&!out.some(x=>["DJing","Music Production","Songwriting","Vocals","Design","Content Creation"].includes(x)))add("Content Creation");
+  return out.slice(0,3);
+}
+
+function questSkillNames(q){
+  const exact=QUEST_SKILL_RULES[q?.title||q?.name];
+  if(exact)return [...exact];
+  return inferCustomQuestSkills(q);
+}
+
+function applyQuestSkillEvidence(q,{type="Daily",date=todayKey(),sourceId=null}={}){
+  if(!q)return;
+  const names=questSkillNames(q);
+  const difficulty=q.difficulty||"Normal";
+  const base={Easy:7,Normal:10,Challenging:12,Hard:14,"Very Hard":16,Elite:18}[difficulty]||10;
+  names.forEach((name,i)=>{
+    const s=findSkillByName(name); if(!s)return;
+    ensureSkillDiscovered(s);
+    s.practiceDays=s.practiceDays||[]; s.logs=s.logs||[];
+    const key=`quest:${sourceId||q.id||q.title||q.name}:${name}`;
+    if(s.logs.some(log=>log.sourceKey===key))return;
+    if(!s.practiceDays.includes(date))s.practiceDays.push(date);
+    s.practice=(s.practice||0)+1;
+    const gain=Math.max(5,base-(i*2));
+    s.xp=Math.min(100,(s.xp||0)+gain);
+    s.lastPracticed=date;
+    s.logs.unshift({date,minutes:0,quality:2,result:`Completed ${type.toLowerCase()} quest: ${q.title||q.name}`,notes:"Auto-logged from quest completion",xp:gain,sourceKey:key});
+    if(s.xp>=100&&s.practice>=5&&s.practiceDays.length>=3){
+      s.state="Mastered";data.legacy.skillsMastered=Object.values(data.skills).filter(x=>x.state==="Mastered").length;unlockRelatedSkills(s.branch);
+    } else if(s.xp>=70)s.state="Proficient";
+    else if(s.xp>=40)s.state="Developing";
+    else s.state="Learning";
+  });
+}
+
+function awardDailyClearSkill(date=todayKey()){
+  const s=findSkillByName("Consistency"); if(!s)return;
+  ensureSkillDiscovered(s); s.practiceDays=s.practiceDays||[]; s.logs=s.logs||[];
+  const key=`daily-clear:${date}`;
+  if(s.logs.some(log=>log.sourceKey===key))return;
+  if(!s.practiceDays.includes(date))s.practiceDays.push(date);
+  s.practice=(s.practice||0)+1; s.xp=Math.min(100,(s.xp||0)+12); s.lastPracticed=date;
+  s.logs.unshift({date,minutes:0,quality:2,result:"Cleared all daily quests",notes:"System daily clear",xp:12,sourceKey:key});
+  if(s.xp>=100&&s.practice>=5&&s.practiceDays.length>=3){s.state="Mastered";unlockRelatedSkills(s.branch)}
+  else if(s.xp>=70)s.state="Proficient"; else if(s.xp>=40)s.state="Developing"; else s.state="Learning";
+}
+
+function reconcileCompletedQuestSkills(){
+  // Current daily quests retain the richest evidence, so use them first.
+  (data.daily?.quests||[]).filter(q=>q.completed).forEach(q=>applyQuestSkillEvidence(q,{type:"Daily",date:data.daily.date||todayKey(),sourceId:q.id}));
+  if(data.daily?.clearAwarded)awardDailyClearSkill(data.daily.date||todayKey());
+
+  // Backfill historical entries whose exact quest titles are known. The source
+  // key prevents future reloads from awarding them again.
+  (data.questHistory||[]).forEach((h,i)=>{
+    if(!QUEST_SKILL_RULES[h.title])return;
+    const pseudo={title:h.title,difficulty:"Normal"};
+    applyQuestSkillEvidence(pseudo,{type:h.type||"Quest",date:h.date||todayKey(),sourceId:`history:${h.date}:${h.type}:${h.title}:${i}`});
+  });
+}
+
 function completeDaily(id){
   const q=data.daily.quests.find(x=>x.id===id);if(!q||q.completed)return;
   q.completed=true;addXP(q.xp);addCoins(q.coins);Object.entries(q.stats||{}).forEach(([s,v])=>addStat(s,v));
+  applyQuestSkillEvidence(q,{type:"Daily",date:todayKey(),sourceId:q.id});
   data.legacy.quests++;data.questHistory.unshift({date:todayKey(),title:q.title,type:"Daily",xp:q.xp});
   if(/training|roadwork|mobility|pulling/i.test(q.title)){progressWeekly("Consistency Protocol");}
   if(/scholar|vocabulary|keyboard|skill study/i.test(q.title)){progressWeekly("Scholar's Pace");data.legacy.learningHours+=.4;}
   if(/creative|dj|bars|producer/i.test(q.title)){progressWeekly("Creator Cycle");}
   const done=data.daily.quests.filter(x=>x.completed).length;
-  if(done===data.daily.quests.length&&!data.daily.clearAwarded){data.daily.clearAwarded=true;addXP(30);addCoins(3);companionBond(2);toast("DAILY CLEAR · +30 XP · +3 COINS · +2 BOND");}
+  if(done===data.daily.quests.length&&!data.daily.clearAwarded){data.daily.clearAwarded=true;addXP(30);addCoins(3);companionBond(2);awardDailyClearSkill(todayKey());toast("DAILY CLEAR · +30 XP · +3 COINS · +2 BOND");}
   initAchievements();save();renderAll();
 }
 function progressWeekly(title){
   const q=data.weekly.quests.find(x=>x.title===title);if(!q||q.completed)return;
   q.progress=Math.min(q.target,q.progress+1);
-  if(q.progress>=q.target){q.completed=true;addXP(q.xp);addCoins(q.coins);data.questHistory.unshift({date:todayKey(),title:q.title,type:"Weekly",xp:q.xp});toast(`WEEKLY CLEAR · ${q.title}`);}
+  if(q.progress>=q.target){q.completed=true;addXP(q.xp);addCoins(q.coins);applyQuestSkillEvidence(q,{type:"Weekly",date:todayKey(),sourceId:q.id});data.questHistory.unshift({date:todayKey(),title:q.title,type:"Weekly",xp:q.xp});toast(`WEEKLY CLEAR · ${q.title}`);}
 }
 
 function renderQuestTab(tab="daily"){
@@ -576,7 +697,7 @@ function renderQuestTab(tab="daily"){
 }
 function completeCustom(id){
   const q=data.customQuests.find(x=>x.id===id);if(!q||q.completed)return;
-  q.completed=true;const xp={Easy:10,Normal:20,Challenging:30,Hard:40,"Very Hard":60,Elite:75}[q.difficulty]||20;addXP(xp);addCoins(q.difficulty==="Hard"?2:1);addStat(q.stat||"discipline",Math.max(5,Math.round(xp*.6)));data.legacy.quests++;data.questHistory.unshift({date:todayKey(),title:q.name,type:"Custom",xp});if(q.type==="Boss"){createBossFromQuest(q);}save();renderAll();toast(`QUEST COMPLETE · +${xp} XP`);
+  q.completed=true;const xp={Easy:10,Normal:20,Challenging:30,Hard:40,"Very Hard":60,Elite:75}[q.difficulty]||20;addXP(xp);addCoins(q.difficulty==="Hard"?2:1);addStat(q.stat||"discipline",Math.max(5,Math.round(xp*.6)));applyQuestSkillEvidence(q,{type:"Custom",date:todayKey(),sourceId:q.id});data.legacy.quests++;data.questHistory.unshift({date:todayKey(),title:q.name,type:"Custom",xp});if(q.type==="Boss"){createBossFromQuest(q);}save();renderAll();toast(`QUEST COMPLETE · +${xp} XP`);
 }
 function createBossFromQuest(q){
   if(data.bosses.some(b=>b.sourceId===q.id))return;
@@ -1361,6 +1482,6 @@ document.getElementById("focusButton").addEventListener("click",()=>{
 });
 
 function initialize(){
-  ensureTraining();initSkills();syncUnsyncedPerformanceHistory();initDaily();initWeekly();initNutrition();data.player.requiredXP=requiredXP(data.player.level);data.player.rank=rankFor(data.player.level);renderAll();console.log("♠ SPADE SYSTEM ONLINE",data);
+  ensureTraining();initSkills();syncUnsyncedPerformanceHistory();initDaily();initWeekly();reconcileCompletedQuestSkills();initNutrition();data.player.requiredXP=requiredXP(data.player.level);data.player.rank=rankFor(data.player.level);renderAll();console.log("♠ SPADE SYSTEM ONLINE",data);
 }
 initialize();
