@@ -152,6 +152,12 @@ const exerciseLibrary = [
   {id:"single_leg_stand",name:"Single-Leg Stand",family:"Balance",focus:"Balance",difficulty:"Beginner",metric:"seconds",target:30,sets:2,stat:"agility"},
   {id:"heel_toe_walk",name:"Heel-to-Toe Walk",family:"Balance",focus:"Dynamic Balance",difficulty:"Beginner",metric:"reps",target:15,sets:1,stat:"agility"},
 
+  {id:"cable_row",name:"Cable Row",family:"Pull",focus:"Back / Biceps",difficulty:"Beginner",metric:"reps",target:12,sets:3,stat:"strength"},
+  {id:"db_overhead_press",name:"Dumbbell Overhead Press",family:"Push",focus:"Shoulders / Triceps",difficulty:"Beginner",metric:"reps",target:8,sets:3,stat:"strength"},
+  {id:"close_grip_pushup",name:"Close-Grip Push-Up",family:"Push",focus:"Triceps / Chest",difficulty:"Intermediate",metric:"reps",target:10,sets:2,stat:"strength",requires:["pushup"]},
+  {id:"slow_pullup_negative",name:"Slow Pull-Up Negative",family:"Pull",focus:"Back / Eccentric Strength",difficulty:"Intermediate",metric:"reps",target:2,sets:2,stat:"strength",requires:["passive_hang"]},
+  {id:"hollow_rock",name:"Hollow Rock",family:"Core",focus:"Core Control",difficulty:"Intermediate",metric:"reps",target:10,sets:2,stat:"strength",requires:["plank"]},
+
   {id:"jumping_jacks",name:"Jumping Jacks",family:"Conditioning",focus:"Cardio",difficulty:"Beginner",metric:"seconds",target:45,sets:3,stat:"endurance"},
   {id:"mountain_climbers",name:"Mountain Climbers",family:"Conditioning",focus:"Cardio / Core",difficulty:"Beginner",metric:"seconds",target:30,sets:3,stat:"endurance"},
   {id:"steady_jog",name:"Steady Jog / Run",family:"Conditioning",focus:"Aerobic Base",difficulty:"Beginner",metric:"minutes",target:10,sets:1,stat:"endurance"},
@@ -174,6 +180,36 @@ const WEEKLY_TRAINING_PROTOCOL = {
   5:{name:"Athletic Power + Combat",families:["Legs","Conditioning","Combat","Core"],intensity:"Hard"},
   6:{name:"Full Body / Optional Conditioning",families:["Push","Pull","Legs","Core","Conditioning"],intensity:"Normal"}
 };
+
+const TRAINING_PHASE_LIBRARY = {
+  upperWarmup:[
+    {id:"warm_arm_circles",name:"Arm Circles",family:"Warm-Up",focus:"Shoulders",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility",simple:true},
+    {id:"warm_shoulder_cars",name:"Shoulder CARs",family:"Warm-Up",focus:"Shoulders",difficulty:"Beginner",metric:"reps",target:5,sets:1,stat:"agility",simple:true},
+    {id:"warm_thoracic_rotations",name:"Thoracic Rotations",family:"Warm-Up",focus:"Upper Back",difficulty:"Beginner",metric:"reps",target:6,sets:1,stat:"agility",simple:true},
+    {id:"warm_cat_cow",name:"Cat-Cow",family:"Warm-Up",focus:"Spine",difficulty:"Beginner",metric:"reps",target:8,sets:1,stat:"agility",simple:true},
+    {id:"warm_jumping_jacks",name:"Easy Jumping Jacks",family:"Warm-Up",focus:"Raise Heart Rate",difficulty:"Beginner",metric:"seconds",target:45,sets:1,stat:"endurance",simple:true}
+  ],
+  lowerWarmup:[
+    {id:"warm_hip_9090",name:"90/90 Hip Switches",family:"Warm-Up",focus:"Hips",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility",simple:true},
+    {id:"warm_ankle_rocks",name:"Ankle Rocks",family:"Warm-Up",focus:"Ankles",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility",simple:true},
+    {id:"warm_cat_cow_lower",name:"Cat-Cow",family:"Warm-Up",focus:"Spine",difficulty:"Beginner",metric:"reps",target:8,sets:1,stat:"agility",simple:true},
+    {id:"warm_squats",name:"Easy Bodyweight Squats",family:"Warm-Up",focus:"Legs",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"strength",simple:true}
+  ],
+  fullWarmup:[
+    {id:"warm_jacks_full",name:"Easy Jumping Jacks",family:"Warm-Up",focus:"Raise Heart Rate",difficulty:"Beginner",metric:"seconds",target:45,sets:1,stat:"endurance",simple:true},
+    {id:"warm_shoulder_full",name:"Shoulder CARs",family:"Warm-Up",focus:"Shoulders",difficulty:"Beginner",metric:"reps",target:5,sets:1,stat:"agility",simple:true},
+    {id:"warm_hip_full",name:"90/90 Hip Switches",family:"Warm-Up",focus:"Hips",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility",simple:true}
+  ],
+  cooldown:[
+    {id:"cool_chest",name:"Chest Stretch",family:"Cooldown",focus:"Chest",difficulty:"Beginner",metric:"seconds",target:30,sets:1,stat:"agility",simple:true},
+    {id:"cool_shoulder",name:"Shoulder Stretch",family:"Cooldown",focus:"Shoulders",difficulty:"Beginner",metric:"seconds",target:30,sets:1,stat:"agility",simple:true},
+    {id:"cool_lat",name:"Lat Stretch",family:"Cooldown",focus:"Back / Lats",difficulty:"Beginner",metric:"seconds",target:30,sets:1,stat:"agility",simple:true},
+    {id:"cool_hip",name:"Hip Flexor Stretch",family:"Cooldown",focus:"Hips",difficulty:"Beginner",metric:"seconds",target:30,sets:1,stat:"agility",simple:true},
+    {id:"cool_frog",name:"Frog Stretch",family:"Cooldown",focus:"Hips / Adductors",difficulty:"Beginner",metric:"seconds",target:45,sets:1,stat:"agility",simple:true},
+    {id:"cool_breath",name:"Slow Deep Breaths",family:"Cooldown",focus:"Recovery",difficulty:"Beginner",metric:"breaths",target:5,sets:1,stat:"discipline",simple:true}
+  ]
+};
+
 
 
 const defaultData = {
@@ -221,6 +257,7 @@ const defaultData = {
     completedSessions:0,
     readiness:{date:null,energy:3,soreness:1,time:60},
     exerciseProgress:{},
+    performanceHistory:[],
     activeWorkout:null,
     lastGenerated:null
   },
@@ -708,6 +745,7 @@ function ensureTraining(){
   data.training.completedSessions=Number(data.training.completedSessions||0);
   data.training.readiness=data.training.readiness||{date:null,energy:3,soreness:1,time:60};
   data.training.exerciseProgress=data.training.exerciseProgress||{};
+  data.training.performanceHistory=data.training.performanceHistory||[];
   if(data.training.activeWorkout===undefined)data.training.activeWorkout=null;
 }
 function exerciseProgress(id){
@@ -759,38 +797,126 @@ function selectExercises(pool,count,used=new Set()){
   }
   return out;
 }
+function timeProfile(minutes){
+  if(minutes<=30)return{label:"Express",warmup:2,main:3,accessory:0,core:1,cooldown:1};
+  if(minutes<=45)return{label:"Short",warmup:2,main:4,accessory:1,core:1,cooldown:1};
+  if(minutes<=60)return{label:"Standard",warmup:3,main:4,accessory:2,core:2,cooldown:2};
+  if(minutes<=75)return{label:"Extended",warmup:3,main:5,accessory:2,core:2,cooldown:2};
+  return{label:"Full Session",warmup:4,main:5,accessory:3,core:3,cooldown:3};
+}
+function clonePhaseExercise(ex,phase){
+  return {...ex,phase,completedSets:[],skipped:false};
+}
+function chooseWarmup(protocol,profile){
+  const isLower=protocol.families.includes("Legs")&&!protocol.families.includes("Push");
+  const isUpper=protocol.families.includes("Push")||protocol.families.includes("Pull");
+  const base=isLower?TRAINING_PHASE_LIBRARY.lowerWarmup:isUpper?TRAINING_PHASE_LIBRARY.upperWarmup:TRAINING_PHASE_LIBRARY.fullWarmup;
+  return base.slice(0,profile.warmup).map(ex=>clonePhaseExercise(ex,"Warm-Up"));
+}
+function chooseCooldown(profile){
+  return TRAINING_PHASE_LIBRARY.cooldown.slice(0,profile.cooldown).map(ex=>clonePhaseExercise(ex,"Cooldown"));
+}
+function scaleForReadiness(ex,state){
+  const copy={...ex};
+  if(state==="Recovery"){
+    copy.sets=Math.min(copy.sets,2);
+    copy.target=copy.metric==="reps"?Math.max(5,Math.round(copy.target*.75)):copy.target;
+  }else if(state==="Reduced"){
+    // Keep a complete workout, but trim fatigue rather than deleting entire phases.
+    if(["Push","Pull","Legs","Conditioning","Combat"].includes(copy.family)){
+      copy.sets=Math.max(2,copy.sets-1);
+      if(copy.metric==="reps")copy.target=Math.max(5,Math.round(copy.target*.85));
+      if(copy.metric==="seconds")copy.target=Math.max(20,Math.round(copy.target*.85));
+    }
+  }else if(state==="High"){
+    if(["Push","Pull","Legs"].includes(copy.family)&&copy.sets<4)copy.sets++;
+  }
+  return copy;
+}
+function chooseBalancedMain(protocol,state,profile){
+  const families=[...protocol.families];
+  let pool=poolForFamilies(families).filter(ex=>!["Core","Mobility","Balance"].includes(ex.family));
+  if(state==="Recovery")return[];
+  if(state==="Reduced"){
+    // No high-fatigue techniques during noticeable soreness.
+    pool=pool.filter(ex=>difficultyIndex(ex.difficulty)<=difficultyIndex("Intermediate")&&!["sprint_interval"].includes(ex.id));
+  }
+
+  const used=new Set(),out=[];
+  const upper=families.includes("Push")&&families.includes("Pull");
+  if(upper){
+    const push=pool.filter(ex=>ex.family==="Push");
+    const pull=pool.filter(ex=>ex.family==="Pull");
+    const pushNeed=profile.main>=4?2:1;
+    const pullNeed=profile.main>=4?2:1;
+    out.push(...selectExercises(push,pushNeed,used));
+    out.push(...selectExercises(pull,pullNeed,used));
+  }
+
+  const primaryFamilies=families.filter(f=>!["Core","Mobility","Balance"].includes(f));
+  for(const fam of primaryFamilies){
+    if(out.length>=profile.main)break;
+    const pick=pool.find(ex=>ex.family===fam&&!used.has(ex.id));
+    if(pick){out.push(pick);used.add(pick.id);}
+  }
+  if(out.length<profile.main)out.push(...selectExercises(pool,profile.main-out.length,used));
+
+  return out.slice(0,profile.main).map(ex=>clonePhaseExercise(scaleForReadiness(ex,state),"Main Training"));
+}
+function chooseAccessories(protocol,state,profile,usedIds){
+  if(profile.accessory<=0||state==="Recovery")return[];
+  let pool=poolForFamilies(protocol.families)
+    .filter(ex=>!usedIds.has(ex.id)&&["Push","Pull","Legs","Conditioning","Combat"].includes(ex.family));
+  if(state==="Reduced")pool=pool.filter(ex=>difficultyIndex(ex.difficulty)<=difficultyIndex("Intermediate"));
+  return selectExercises(pool,profile.accessory,new Set(usedIds))
+    .map(ex=>clonePhaseExercise(scaleForReadiness(ex,state),"Accessories"));
+}
+function chooseCoreMobility(protocol,state,profile,usedIds){
+  let fams=["Core","Mobility"];
+  if(state==="Recovery")fams=["Mobility","Balance","Core"];
+  let pool=poolForFamilies(fams).filter(ex=>!usedIds.has(ex.id));
+  const picks=[];
+  const used=new Set(usedIds);
+  // Always favor at least one actual core movement unless in pure recovery.
+  if(state!=="Recovery"){
+    const core=pool.find(ex=>ex.family==="Core");
+    if(core){picks.push(core);used.add(core.id);}
+  }
+  for(const ex of pool){
+    if(picks.length>=profile.core)break;
+    if(used.has(ex.id))continue;
+    picks.push(ex);used.add(ex.id);
+  }
+  return picks.slice(0,profile.core).map(ex=>clonePhaseExercise(scaleForReadiness(ex,state),"Core & Mobility"));
+}
 function generateRecommendedWorkout(readiness){
   ensureTraining();
   const protocol=WEEKLY_TRAINING_PROTOCOL[new Date().getDay()];
   const state=readinessLabel(readiness);
-  let families=[...protocol.families];
+  const profile=timeProfile(readiness.time);
   let name=protocol.name;
-  if(state==="Recovery"){
-    families=["Mobility","Balance","Core"];
-    name="Recovery & Mobility Protocol";
-  }else if(state==="Reduced"){
-    families=families.filter(f=>f!=="Conditioning"&&f!=="Combat");
-    if(!families.includes("Mobility"))families.push("Mobility");
-    name=`Reduced ${protocol.name}`;
-  }
-  const pool=poolForFamilies(families).sort((a,b)=>difficultyIndex(a.difficulty)-difficultyIndex(b.difficulty));
-  const maxExercises=readiness.time<=30?4:readiness.time<=45?5:readiness.time<=60?6:7;
-  const used=new Set(),chosen=[];
-  for(const fam of families){
-    const choices=pool.filter(e=>e.family===fam);
-    const pick=choices.find(e=>!used.has(e.id));
-    if(pick&&chosen.length<maxExercises){chosen.push(pick);used.add(pick.id);}
-  }
-  if(chosen.length<maxExercises)chosen.push(...selectExercises(pool,maxExercises-chosen.length,used));
-  const exercises=chosen.slice(0,maxExercises).map(ex=>({
-    id:ex.id,name:ex.name,family:ex.family,focus:ex.focus,difficulty:ex.difficulty,
-    metric:ex.metric,target:ex.target,sets:state==="Recovery"?Math.min(ex.sets,2):ex.sets,
-    completedSets:[],skipped:false
-  }));
+
+  if(state==="Recovery")name="Recovery & Mobility Protocol";
+  else if(state==="Reduced")name=`Reduced ${protocol.name}`;
+
+  const warmup=chooseWarmup(protocol,profile);
+  const main=chooseBalancedMain(protocol,state,profile);
+  const usedIds=new Set(main.map(e=>e.id));
+  const accessory=chooseAccessories(protocol,state,profile,usedIds);
+  accessory.forEach(e=>usedIds.add(e.id));
+  const core=chooseCoreMobility(protocol,state,profile,usedIds);
+  const cooldown=chooseCooldown(profile);
+
+  const exercises=[...warmup,...main,...accessory,...core,...cooldown];
   const workout={
     id:uid("tw"),date:todayKey(),name,
-    readiness:{...readiness,state},tier:trainingTier(),
-    startedAt:new Date().toISOString(),exercises,completed:false
+    readiness:{...readiness,state},
+    tier:trainingTier(),
+    durationProfile:profile.label,
+    targetMinutes:readiness.time,
+    startedAt:new Date().toISOString(),
+    exercises,
+    completed:false
   };
   data.training.readiness={date:todayKey(),...readiness};
   data.training.activeWorkout=workout;
@@ -814,33 +940,49 @@ function openReadinessCheck(){
     <button class="primary-btn" type="submit">Generate Today's Training</button>
   </form>`,"TRAINING ENGINE");
 }
-function targetText(ex){return `${ex.sets} × ${ex.target} ${ex.metric}`;}
+function targetText(ex){
+  if(ex.simple)return `${ex.target} ${ex.metric}`;
+  return `${ex.sets} × ${ex.target} ${ex.metric}`;
+}
+function phaseOrder(){
+  return ["Warm-Up","Main Training","Accessories","Core & Mobility","Cooldown"];
+}
 function renderActiveWorkout(){
   ensureTraining();
   const w=data.training.activeWorkout;
   if(!w){openReadinessCheck();return;}
   const done=w.exercises.reduce((a,e)=>a+e.completedSets.length,0);
   const total=w.exercises.reduce((a,e)=>a+e.sets,0);
-  openModal(w.name,`
-    <div class="training-header-card">
-      <div><p class="eyebrow">ACTIVE TRAINING</p><h3>${esc(w.readiness.state)} Readiness · ${esc(w.tier)} Tier</h3><p class="meta">${done}/${total} sets logged</p></div>
-      <button class="secondary-btn" data-abandon-workout>Regenerate</button>
-    </div>
-    <div class="training-progress"><div style="width:${total?done/total*100:0}%"></div></div>
-    <div class="training-exercise-list">
-      ${w.exercises.map((ex,i)=>{
+  const sections=phaseOrder().map(phase=>{
+    const items=w.exercises.map((ex,i)=>({ex,i})).filter(x=>x.ex.phase===phase);
+    if(!items.length)return"";
+    return `<section class="training-phase">
+      <div class="phase-heading"><p class="eyebrow">${phase}</p><span>${items.length} movement${items.length===1?"":"s"}</span></div>
+      <div class="training-exercise-list">${items.map(({ex,i})=>{
         const complete=ex.completedSets.length>=ex.sets;
         return `<article class="training-exercise ${complete?"exercise-complete":""}">
           <div class="row-between">
             <div><p class="eyebrow">${esc(ex.family)} · ${esc(ex.difficulty)}</p><h3>${esc(ex.name)}</h3><p class="meta">${esc(ex.focus)} · Target ${targetText(ex)}</p></div>
             <span class="set-count">${ex.completedSets.length}/${ex.sets}</span>
           </div>
-          ${ex.completedSets.length?`<div class="logged-sets">${ex.completedSets.map((v,n)=>`<span>Set ${n+1}: ${v}</span>`).join("")}</div>`:""}
-          ${complete?`<div class="clear-chip">EXERCISE CLEAR</div>`:`<div class="set-entry"><input inputmode="decimal" id="setValue_${i}" placeholder="${ex.target} ${ex.metric}" type="number" min="0" step="0.1"><button class="primary-btn" data-log-training-set="${i}">Log Set</button></div>`}
-          <div class="card-actions">${!complete?`<button class="secondary-btn" data-rest-timer="60">60s Rest</button><button class="secondary-btn" data-rest-timer="90">90s Rest</button>`:""}</div>
+          ${ex.completedSets.length?`<div class="logged-sets">${ex.completedSets.map((v,n)=>`<span>${ex.simple?"Done":`Set ${n+1}: ${v}`}</span>`).join("")}</div>`:""}
+          ${complete?`<div class="clear-chip">CLEAR</div>`:ex.simple?
+            `<button class="primary-btn simple-complete-btn" data-log-training-simple="${i}">Mark Complete</button>`:
+            `<div class="set-entry"><input inputmode="decimal" id="setValue_${i}" placeholder="${ex.target} ${ex.metric}" type="number" min="0" step="0.1"><button class="primary-btn" data-log-training-set="${i}">Log Set</button></div>`
+          }
+          <div class="card-actions">${!complete&&!ex.simple&&["Main Training","Accessories","Core & Mobility"].includes(ex.phase)?`<button class="secondary-btn" data-rest-timer="60">60s Rest</button><button class="secondary-btn" data-rest-timer="90">90s Rest</button><button class="secondary-btn" data-substitute-exercise="${i}">Substitute</button>`:""}</div>
         </article>`;
-      }).join("")}
+      }).join("")}</div>
+    </section>`;
+  }).join("");
+
+  openModal(w.name,`
+    <div class="training-header-card">
+      <div><p class="eyebrow">ACTIVE TRAINING</p><h3>${esc(w.readiness.state)} Readiness · ${esc(w.tier)} Tier</h3><p class="meta">${esc(w.durationProfile||"Session")} · Target ${w.targetMinutes||w.readiness.time} min · ${done}/${total} items logged</p></div>
+      <button class="secondary-btn" data-abandon-workout>Regenerate</button>
     </div>
+    <div class="training-progress"><div style="width:${total?done/total*100:0}%"></div></div>
+    ${sections}
     <button class="primary-btn finish-training-btn" data-finish-training>Finish Training</button>
   `,"LIVE WORKOUT");
 }
@@ -850,6 +992,20 @@ function logTrainingSet(index){
   const input=document.getElementById(`setValue_${index}`),value=Number(input?.value);
   if(!(value>0)){toast("ENTER THE REPS / TIME YOU ACTUALLY COMPLETED");return;}
   ex.completedSets.push(value);save();renderActiveWorkout();
+}
+function logSimpleTrainingItem(index){
+  const w=data.training.activeWorkout;if(!w)return;
+  const ex=w.exercises[index];if(!ex||ex.completedSets.length>=ex.sets)return;
+  ex.completedSets.push(ex.target||1);save();renderActiveWorkout();
+}
+function substituteTrainingExercise(index){
+  const w=data.training.activeWorkout;if(!w)return;
+  const current=w.exercises[index];if(!current)return;
+  const pool=exerciseLibrary.filter(ex=>ex.family===current.family&&isExerciseUnlocked(ex)&&ex.id!==current.id);
+  if(!pool.length){toast("NO SUITABLE SUBSTITUTE UNLOCKED");return;}
+  const replacement=pool.find(ex=>difficultyIndex(ex.difficulty)<=difficultyIndex(current.difficulty))||pool[0];
+  w.exercises[index]=clonePhaseExercise(scaleForReadiness(replacement,w.readiness.state),current.phase);
+  save();renderActiveWorkout();toast(`SUBSTITUTED · ${replacement.name}`);
 }
 let restTimerInterval=null;
 function startRestTimer(seconds){
@@ -883,8 +1039,9 @@ function finishActiveWorkout(){
   ensureTraining();const w=data.training.activeWorkout;if(!w)return;
   const logged=w.exercises.filter(e=>e.completedSets.length>0);
   if(!logged.length){toast("LOG AT LEAST ONE REAL SET FIRST");return;}
-  logged.forEach(ex=>{updateExerciseProgressFromWorkout(ex);applyWorkoutSkillProgress(ex);});
+  logged.filter(ex=>!ex.simple).forEach(ex=>{updateExerciseProgressFromWorkout(ex);applyWorkoutSkillProgress(ex);});
   const totalSets=logged.reduce((a,e)=>a+e.completedSets.length,0);
+  const fatigueFlags=logged.filter(ex=>!ex.simple&&ex.completedSets.length>=2&&ex.completedSets[0]>0&&ex.completedSets[ex.completedSets.length-1]/ex.completedSets[0] < .55).map(ex=>ex.name);
   const xp=Math.min(60,15+totalSets*2);
   const minutes=Math.max(10,Math.round((Date.now()-new Date(w.startedAt).getTime())/60000));
   data.workouts.push({id:w.id,name:w.name,minutes,difficulty:w.readiness.state==="High"?"Hard":w.readiness.state==="Recovery"?"Easy":"Normal",notes:`Training Engine · ${logged.length}/${w.exercises.length} exercises · ${totalSets} sets`,date:todayKey(),exerciseLog:logged});
@@ -894,7 +1051,7 @@ function finishActiveWorkout(){
   const stats=new Set(logged.map(e=>exerciseLibrary.find(x=>x.id===e.id)?.stat).filter(Boolean));
   stats.forEach(s=>addStat(s,8));
   progressWeekly("Consistency Protocol");
-  data.timeline.unshift({date:todayKey(),text:`Training cleared: ${w.name}`});
+  data.timeline.unshift({date:todayKey(),text:`Training cleared: ${w.name}${fatigueFlags.length?` · Fatigue detected: ${fatigueFlags.join(", ")}`:""}`});
   data.training.activeWorkout=null;
   save();renderAll();closeModal();toast(`TRAINING CLEAR · +${xp} XP`);
 }
@@ -962,6 +1119,89 @@ function renderCalendarModal(){
   const classes=Object.entries(schedule).flatMap(([day,arr])=>arr.map(x=>({...x,day:Number(day)})));
   openModal("Calendar",`<button class="small-btn" data-add="event">+ Event</button><div class="list-stack" style="margin-top:12px"><div class="list-card"><strong>Recurring Classes</strong>${classes.map(c=>`<p class="meta">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][c.day]} · ${c.start} · ${esc(c.name)}</p>`).join("")}</div>${data.calendarEvents.map(e=>`<div class="list-card"><strong>${esc(e.name)}</strong><p class="meta">${e.date} · ${e.time||"All Day"} · ${esc(e.category||"Event")}</p></div>`).join("")}</div>`,"CALENDAR");
 }
+
+function normalizeExerciseName(name){
+  return String(name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+}
+function findExerciseByAlias(name){
+  const n=normalizeExerciseName(name);
+  const aliases={
+    "run":"steady_jog","treadmill run":"steady_jog","jog":"steady_jog","running":"steady_jog",
+    "pull ups":"pullup","pull up":"pullup","pullups":"pullup",
+    "push ups":"pushup","push up":"pushup","pushups":"pushup",
+    "cable rows":"cable_row","cable row":"cable_row",
+    "dumbbell overhead press":"db_overhead_press","db overhead press":"db_overhead_press","overhead press":"db_overhead_press",
+    "dips":"dip","dip":"dip",
+    "dumbbell curls":"db_bicep_curl","db curls":"db_bicep_curl","bicep curls":"db_bicep_curl",
+    "hammer curls":"hammer_curl","hammer curl":"hammer_curl",
+    "dumbbell lateral raises":"dumbbell_lateral_raise","lateral raises":"dumbbell_lateral_raise","lateral raise":"dumbbell_lateral_raise",
+    "close grip push ups":"close_grip_pushup","close grip push up":"close_grip_pushup",
+    "explosive push ups":"explosive_pushup","explosive push up":"explosive_pushup",
+    "slow pull up negatives":"slow_pullup_negative","pull up negatives":"slow_pullup_negative","slow pull up negative":"slow_pullup_negative",
+    "heavy bag":"bag_fixed_punch","heavy bag round":"bag_fixed_punch",
+    "knee raises":"knee_raise","hanging knee raises":"knee_raise","lying knee raises":"knee_raise",
+    "dead bugs":"dead_bug","dead bug":"dead_bug",
+    "plank":"plank","planks":"plank","normal plank":"plank",
+    "hollow rocks":"hollow_rock","hollow rock":"hollow_rock"
+  };
+  const id=aliases[n];
+  if(id)return exerciseLibrary.find(ex=>ex.id===id)||null;
+  return exerciseLibrary.find(ex=>normalizeExerciseName(ex.name)===n)||null;
+}
+function parseHistoricalExerciseLines(text){
+  return String(text||"").split(/\n+/).map(line=>line.trim()).filter(Boolean).map(line=>{
+    const parts=line.split("|").map(x=>x.trim());
+    const name=parts[0]||"Exercise";
+    const raw=parts[1]||"";
+    const detail=parts.slice(2).join(" | ");
+    const values=(raw.match(/\d+(?:\.\d+)?/g)||[]).map(Number);
+    const ex=findExerciseByAlias(name);
+    return {name,raw,detail,values,exerciseId:ex?.id||null,family:ex?.family||"Custom",metric:ex?.metric||"reps",stat:ex?.stat||null};
+  });
+}
+function openHistoricalWorkoutImport(){
+  ensureTraining();
+  openModal("Import Previous Workout",`<form id="historicalWorkoutForm">
+    <div class="list-card"><strong>Private Performance Import</strong><p class="meta">This saves into this browser only. It does not award Player XP, so you can safely use it to add detailed set data after a workout you already logged.</p></div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="field"><label>Date</label><input type="date" name="date" value="${todayKey()}" required></div>
+      <div class="field"><label>Minutes</label><input type="number" name="minutes" min="1" value="75"></div>
+    </div>
+    <div class="field"><label>Workout Name</label><input name="name" value="Upper Body + Conditioning + Mobility" required></div>
+    <div class="field"><label>Exercise Performance</label><textarea name="performance" class="performance-import" placeholder="One exercise per line:\nPull-Ups | 5,3,3\nPush-Ups | 15,10,8\nDumbbell Curls | 12,10 | 25 lb\nRun | 1 | mile"></textarea><p class="meta">Format: Exercise | set values | optional detail. Unknown exercises are still saved as custom performance records.</p></div>
+    <div class="field"><label>Session Notes</label><textarea name="notes" placeholder="Soreness, substitutions, form notes, mobility, cooldown, etc."></textarea></div>
+    <label class="import-check"><input type="checkbox" name="countSession" checked> Count this as one Training Engine session for technique unlock progression.</label>
+    <button class="primary-btn" type="submit">Import Performance</button>
+  </form>`,"HISTORICAL PERFORMANCE");
+}
+function importHistoricalWorkout(form){
+  ensureTraining();
+  const f=new FormData(form),date=f.get("date")||todayKey(),name=f.get("name")||"Imported Workout";
+  const entries=parseHistoricalExerciseLines(f.get("performance"));
+  if(!entries.length){toast("ADD AT LEAST ONE EXERCISE LINE");return false;}
+  const duplicate=data.training.performanceHistory.some(h=>h.date===date&&h.name===name);
+  if(duplicate){toast("THIS PERFORMANCE SESSION IS ALREADY IMPORTED");return false;}
+  const session={id:uid("hist"),date,name,minutes:Number(f.get("minutes")||0),notes:f.get("notes")||"",entries,importedAt:new Date().toISOString()};
+  data.training.performanceHistory.unshift(session);
+  entries.forEach(entry=>{
+    if(!entry.exerciseId||!entry.values.length)return;
+    const p=exerciseProgress(entry.exerciseId);
+    p.sessions++;
+    p.totalSets+=entry.values.length;
+    p.last=date;
+    p.best=Math.max(p.best||0,...entry.values);
+    p.lastValues=entry.values;
+    p.lastDetail=entry.detail||"";
+  });
+  if(f.get("countSession"))data.training.completedSessions++;
+  data.timeline.unshift({date,text:`Performance imported: ${name}`});
+  save();renderAll();return true;
+}
+function renderPerformanceHistory(){
+  ensureTraining();
+  const rows=data.training.performanceHistory.slice(0,10);
+  openModal("Performance History",rows.length?`<div class="list-stack">${rows.map(h=>`<div class="list-card"><div class="row-between"><strong>${esc(h.name)}</strong><span>${h.date}</span></div><p class="meta">${h.entries.length} exercises · ${h.minutes||"—"} min</p><div class="performance-mini">${h.entries.slice(0,5).map(e=>`<span>${esc(e.name)}: ${esc(e.raw||e.values.join(", "))}</span>`).join("")}${h.entries.length>5?`<span>+${h.entries.length-5} more</span>`:""}</div></div>`).join("")}</div>`:`<div class="list-card"><p class="meta">No detailed performance sessions imported yet.</p></div>`,"HISTORY");
+}
 function renderFitnessModal(){
   ensureTraining();
   const hist=data.body.history.slice(-6).reverse();
@@ -969,7 +1209,7 @@ function renderFitnessModal(){
   openModal("Fitness & Training",`${trainingSummaryHtml()}
     <div class="card-actions training-main-actions">
       <button class="primary-btn" data-start-training>${data.training.activeWorkout?"Resume Workout":"Start Today's Training"}</button>
-      <button class="secondary-btn" data-add="weight">Log Weight</button>
+      <button class="secondary-btn" data-add="weight">Log Weight</button><button class="secondary-btn" data-import-performance>Import Previous Workout</button><button class="secondary-btn" data-performance-history>Performance History</button>
     </div>
     <div class="panel training-unlocks-panel">
       <div class="row-between"><div><p class="eyebrow">TECHNIQUE PROGRESSION</p><h3>Unlocked Library</h3></div><span class="tag">${trainingTier()}</span></div>
@@ -1016,6 +1256,7 @@ function redeemReward(id){
 
 function handleForms(e){
   if(e.target.id==="readinessForm"){e.preventDefault();const f=new FormData(e.target);generateRecommendedWorkout({energy:Number(f.get("energy")),soreness:Number(f.get("soreness")),time:Number(f.get("time"))});renderActiveWorkout();return;}
+  if(e.target.id==="historicalWorkoutForm"){e.preventDefault();if(importHistoricalWorkout(e.target)){closeModal();toast("PERFORMANCE IMPORTED · BASELINES UPDATED");}return;}
   if(e.target.id==="skillProgressForm"){e.preventDefault();const f=new FormData(e.target);recordSkillProgress(e.target.dataset.skillId,Number(f.get("minutes")||1),Number(f.get("quality")||2),f.get("result")||"",f.get("notes")||"");closeModal();toast("SKILL PROGRESS RECORDED");return;}
   if(e.target.id==="questForm"){e.preventDefault();const f=new FormData(e.target);data.customQuests.unshift({id:uid("q"),name:f.get("name"),category:f.get("category"),type:f.get("type"),difficulty:f.get("difficulty"),stat:f.get("stat"),date:f.get("date"),notes:f.get("notes"),completed:false});save();closeModal();renderQuestTab("custom");toast("QUEST ADDED");}
   if(e.target.id==="eventForm"){e.preventDefault();const f=new FormData(e.target);data.calendarEvents.push({id:uid("e"),name:f.get("name"),date:f.get("date"),time:f.get("time"),category:f.get("category"),notes:f.get("notes")});save();closeModal();renderAll();toast("EVENT ADDED");}
@@ -1056,7 +1297,11 @@ document.addEventListener("click",e=>{
   const pd=e.target.closest("[data-progress-dungeon]");if(pd){progressDungeon(pd.dataset.progressDungeon);return;}
   const ps=e.target.closest("[data-practice-skill]");if(ps){openSkillProgress(ps.dataset.practiceSkill);return;}
   if(e.target.closest("[data-start-training]")){ensureTraining();data.training.activeWorkout?renderActiveWorkout():openReadinessCheck();return;}
+  if(e.target.closest("[data-import-performance]")){openHistoricalWorkoutImport();return;}
+  if(e.target.closest("[data-performance-history]")){renderPerformanceHistory();return;}
   const ls=e.target.closest("[data-log-training-set]");if(ls){logTrainingSet(Number(ls.dataset.logTrainingSet));return;}
+  const simple=e.target.closest("[data-log-training-simple]");if(simple){logSimpleTrainingItem(Number(simple.dataset.logTrainingSimple));return;}
+  const sub=e.target.closest("[data-substitute-exercise]");if(sub){substituteTrainingExercise(Number(sub.dataset.substituteExercise));return;}
   const rt=e.target.closest("[data-rest-timer]");if(rt){startRestTimer(Number(rt.dataset.restTimer));return;}
   if(e.target.closest("[data-finish-training]")){finishActiveWorkout();return;}
   if(e.target.closest("[data-abandon-workout]")){data.training.activeWorkout=null;save();openReadinessCheck();return;}

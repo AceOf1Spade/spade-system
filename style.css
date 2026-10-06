@@ -957,3 +957,14 @@ textarea{min-height:110px;resize:vertical} label{display:block;color:var(--soft)
   .set-entry .primary-btn{min-height:44px}
   .training-exercise{padding:12px}
 }
+
+
+/* =========================================
+   TRAINING ENGINE V1.4.1
+========================================= */
+.training-phase{margin-top:18px}
+.phase-heading{display:flex;justify-content:space-between;align-items:center;margin:0 2px 9px}
+.phase-heading span{font-size:.68rem;color:var(--soft)}
+.simple-complete-btn{width:100%;margin-top:12px;min-height:44px}
+.training-phase + .training-phase{padding-top:4px}
+\n\n/* =========================================\n   HISTORICAL PERFORMANCE IMPORT · V1.4.2\n========================================= */\n.performance-import{min-height:210px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76rem;line-height:1.5}\n.import-check{display:flex;align-items:flex-start;gap:9px;padding:12px;border-radius:14px;background:var(--panel);border:1px solid var(--border);margin-bottom:14px}\n.import-check input{width:auto;margin-top:3px}\n.performance-mini{display:flex;flex-direction:column;gap:4px;margin-top:9px}\n.performance-mini span{font-size:.68rem;color:var(--soft)}\n.training-main-actions{flex-wrap:wrap}\n@media(max-width:520px){.training-main-actions>*{flex:1 1 45%}.performance-import{min-height:240px}}\n
