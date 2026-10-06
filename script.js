@@ -1021,20 +1021,53 @@ function updateExerciseProgressFromWorkout(ex){
   p.best=Math.max(p.best||0,...ex.completedSets);
 }
 function trainingSkillKey(ex){
-  const map={Push:"Push-Ups",Pull:"Pull-Ups",Legs:"Weight Training",Core:"Core Strength",Mobility:"Mobility",Balance:"Coordination",Conditioning:"Running",Combat:"Stance & Guard"};
-  return map[ex.family]||null;
+  const specific={
+    pushup:"Push-Ups",incline_diamond_pushup:"Push-Ups",close_grip_pushup:"Push-Ups",
+    explosive_pushup:"Explosive Power",pullup:"Pull-Ups",slow_pullup_negative:"Pull-Ups",
+    dip:"Dips",bench_dip:"Dips",plank:"Core Strength",knee_raise:"Core Strength",
+    dead_bug:"Core Strength",hollow_rock:"Core Strength",steady_jog:"Running",
+    cable_row:"Weight Training",db_overhead_press:"Weight Training",db_bicep_curl:"Weight Training",
+    hammer_curl:"Weight Training",dumbbell_lateral_raise:"Weight Training",bag_fixed_punch:"Conditioning"
+  };
+  if(ex?.id && specific[ex.id])return specific[ex.id];
+  const map={Push:"Push-Ups",Pull:"Pull-Ups",Legs:"Weight Training",Core:"Core Strength",Mobility:"Mobility",Balance:"Coordination",Conditioning:"Running",Combat:"Conditioning"};
+  return map[ex?.family]||null;
+}
+function findSkillByName(name){return Object.values(data.skills).find(x=>x.name===name)||null;}
+function ensureSkillDiscovered(s){if(s&&s.state==="Locked")s.state="Discovered";}
+function applySkillEvidence(skillName,{date=todayKey(),sets=1,result="",notes="",xpGain=null}={}){
+  const s=findSkillByName(skillName);if(!s)return;
+  ensureSkillDiscovered(s);s.practiceDays=s.practiceDays||[];s.logs=s.logs||[];
+  if(!s.practiceDays.includes(date))s.practiceDays.push(date);
+  const sameSession=s.logs.some(log=>log.date===date&&String(log.notes||"").includes("Performance import"));
+  if(!sameSession)s.practice=(s.practice||0)+1;
+  const gain=xpGain??Math.min(18,6+Math.max(1,sets)*2);
+  s.xp=Math.min(100,(s.xp||0)+gain);s.lastPracticed=date;
+  s.logs.unshift({date,minutes:0,quality:2,result,notes:notes||"Performance import",xp:gain});
+  if(s.xp>=100&&s.practice>=5&&s.practiceDays.length>=3){s.state="Mastered";data.legacy.skillsMastered=Object.values(data.skills).filter(x=>x.state==="Mastered").length;unlockRelatedSkills(s.branch);}
+  else if(s.xp>=70)s.state="Proficient";else if(s.xp>=40)s.state="Developing";else s.state="Learning";
 }
 function applyWorkoutSkillProgress(ex){
   const name=trainingSkillKey(ex);if(!name)return;
-  const s=Object.values(data.skills).find(x=>x.name===name);
-  if(!s||s.state==="Locked")return;
-  s.practiceDays=s.practiceDays||[];s.logs=s.logs||[];
-  const day=todayKey();if(!s.practiceDays.includes(day))s.practiceDays.push(day);
-  s.practice++;const gain=Math.min(12,4+ex.completedSets.length*2);s.xp=Math.min(100,s.xp+gain);
-  s.logs.unshift({date:day,minutes:0,quality:2,result:`${ex.name}: ${ex.completedSets.join(", ")}`,notes:"Auto-logged from Training Engine",xp:gain});
-  if(s.xp>=100&&s.practice>=5&&s.practiceDays.length>=3){s.state="Mastered";unlockRelatedSkills(s.branch);}
-  else if(s.xp>=70)s.state="Proficient";else if(s.xp>=40)s.state="Developing";else s.state="Learning";
+  applySkillEvidence(name,{date:todayKey(),sets:ex.completedSets.length,result:`${ex.name}: ${ex.completedSets.join(", ")}`,notes:"Auto-logged from Training Engine",xpGain:Math.min(12,4+ex.completedSets.length*2)});
 }
+function syncImportedSessionToSkills(session){
+  if(!session||session.skillsSynced)return;
+  const grouped={};
+  (session.entries||[]).forEach(entry=>{
+    if(!entry.exerciseId||!entry.values?.length)return;
+    const ex=exerciseLibrary.find(x=>x.id===entry.exerciseId)||{id:entry.exerciseId,family:entry.family,name:entry.name};
+    const skillName=trainingSkillKey(ex);if(!skillName)return;
+    grouped[skillName]=grouped[skillName]||{sets:0,results:[]};
+    grouped[skillName].sets+=entry.values.length;grouped[skillName].results.push(`${entry.name}: ${entry.raw||entry.values.join(", ")}`);
+  });
+  if(/\bcompleted full mobility block\b|\bfull mobility block\b/i.test(session.notes||"")){
+    grouped["Mobility"]=grouped["Mobility"]||{sets:1,results:[]};grouped["Mobility"].results.push("Completed full mobility block");
+  }
+  Object.entries(grouped).forEach(([skillName,g])=>applySkillEvidence(skillName,{date:session.date||todayKey(),sets:g.sets,result:g.results.join(" · "),notes:`Performance import · ${session.name||"Workout"}`,xpGain:Math.min(20,6+Math.min(7,g.sets)*2)}));
+  session.skillsSynced=true;session.skillsSyncedAt=new Date().toISOString();
+}
+function syncUnsyncedPerformanceHistory(){ensureTraining();(data.training.performanceHistory||[]).forEach(syncImportedSessionToSkills);}
 function finishActiveWorkout(){
   ensureTraining();const w=data.training.activeWorkout;if(!w)return;
   const logged=w.exercises.filter(e=>e.completedSets.length>0);
@@ -1194,6 +1227,7 @@ function importHistoricalWorkout(form){
     p.lastDetail=entry.detail||"";
   });
   if(f.get("countSession"))data.training.completedSessions++;
+  syncImportedSessionToSkills(session);
   data.timeline.unshift({date,text:`Performance imported: ${name}`});
   save();renderAll();return true;
 }
@@ -1327,6 +1361,6 @@ document.getElementById("focusButton").addEventListener("click",()=>{
 });
 
 function initialize(){
-  ensureTraining();initSkills();initDaily();initWeekly();initNutrition();data.player.requiredXP=requiredXP(data.player.level);data.player.rank=rankFor(data.player.level);renderAll();console.log("♠ SPADE SYSTEM ONLINE",data);
+  ensureTraining();initSkills();syncUnsyncedPerformanceHistory();initDaily();initWeekly();initNutrition();data.player.requiredXP=requiredXP(data.player.level);data.player.rank=rankFor(data.player.level);renderAll();console.log("♠ SPADE SYSTEM ONLINE",data);
 }
 initialize();
