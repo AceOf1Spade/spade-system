@@ -571,6 +571,7 @@ const QUEST_SKILL_RULES = {
   "Producer's Hour":["Music Production","Focus"],
   "Priority Target":["Responsibility","Focus"],
   "Restore Order":["Routines","Responsibility"],
+  "Recovery Protocol":["Recovery","Routines"],
   "Professional Contact":["Networking","Conversation"],
   "Speak With Intent":["Speaking","Confidence"],
   "Consistency Protocol":["Consistency","Routines"],
@@ -674,7 +675,7 @@ function completeDaily(id){
   q.completed=true;addXP(q.xp);addCoins(q.coins);Object.entries(q.stats||{}).forEach(([s,v])=>addStat(s,v));
   applyQuestSkillEvidence(q,{type:"Daily",date:todayKey(),sourceId:q.id});
   data.legacy.quests++;data.questHistory.unshift({date:todayKey(),title:q.title,type:"Daily",xp:q.xp});
-  if(/training|roadwork|mobility|pulling/i.test(q.title)){progressWeekly("Consistency Protocol");}
+  if(/training|roadwork|mobility|pulling|recovery/i.test(q.title)){progressWeekly("Consistency Protocol");}
   if(/scholar|vocabulary|keyboard|skill study/i.test(q.title)){progressWeekly("Scholar's Pace");data.legacy.learningHours+=.4;}
   if(/creative|dj|bars|producer/i.test(q.title)){progressWeekly("Creator Cycle");}
   const done=data.daily.quests.filter(x=>x.completed).length;
@@ -1060,6 +1061,7 @@ function ensureTraining(){
   data.training.readiness=data.training.readiness||{date:null,energy:3,soreness:1,time:60};
   data.training.exerciseProgress=data.training.exerciseProgress||{};
   data.training.performanceHistory=data.training.performanceHistory||[];
+  data.training.recoveryDays=data.training.recoveryDays||[];
   if(data.training.activeWorkout===undefined)data.training.activeWorkout=null;
 }
 function exerciseProgress(id){
@@ -1286,10 +1288,43 @@ function generateRecommendedWorkout(readiness){
   save();
   return workout;
 }
+function isRecoveryDay(date=todayKey()){
+  ensureTraining();
+  return (data.training.recoveryDays||[]).includes(date);
+}
+function activateRecoveryDay(){
+  ensureTraining();
+  const day=todayKey();
+  if(isRecoveryDay(day)){toast("RECOVERY PROTOCOL ALREADY ACTIVE");renderFitnessModal();return;}
+  if(data.training.activeWorkout){
+    toast("FINISH OR ABANDON THE ACTIVE WORKOUT FIRST");
+    return;
+  }
+  data.training.recoveryDays.push(day);
+  data.training.readiness={date:day,energy:data.training.readiness?.energy||3,soreness:data.training.readiness?.soreness||1,time:15,state:"Recovery"};
+
+  // A planned rest day changes the physical daily quest instead of pretending
+  // that recovery is a missed workout. XP is earned when the protocol is cleared.
+  const physical=data.daily?.quests?.find(q=>q.id===`${day}_physical` && !q.completed);
+  if(physical){
+    physical.title="Recovery Protocol";
+    physical.description="Honor the planned rest day: no hard training. Complete 5–10 min of light mobility or an easy walk, hydrate, eat normally with solid protein, and prioritize sleep.";
+    physical.difficulty="Easy";
+    physical.xp=10;
+    physical.coins=0;
+    physical.stats={discipline:5,endurance:3};
+  }
+
+  const recovery=findSkillByName("Recovery");
+  ensureSkillDiscovered(recovery);
+  data.timeline.unshift({date:day,text:"Recovery Protocol activated."});
+  save();renderAll();renderFitnessModal();
+  toast("SYSTEM STATUS · RECOVERY PROTOCOL ACTIVE");
+}
 function openReadinessCheck(){
   ensureTraining();
   openModal("Training Readiness",`<form id="readinessForm">
-    <div class="list-card"><strong>SHADE Calibration</strong><p class="meta">Your answers change today's workout. Recovery is valid progression.</p></div>
+    <div class="list-card"><strong>SHADE Calibration</strong><p class="meta">Your answers change today's workout. Recovery is valid progression.</p><div class="card-actions"><button class="secondary-btn" type="button" data-activate-recovery>Make Today a Recovery Day</button></div></div>
     <div class="form-grid" style="margin-top:14px">
       <div class="field"><label>Energy</label><select name="energy">
         <option value="1">1 · Drained</option><option value="2">2 · Low</option><option value="3" selected>3 · Normal</option><option value="4">4 · Good</option><option value="5">5 · Excellent</option>
@@ -1602,9 +1637,11 @@ function renderFitnessModal(){
   ensureTraining();
   const hist=data.body.history.slice(-6).reverse();
   const recent=data.workouts.slice(-6).reverse();
+  const recoveryActive=isRecoveryDay();
   openModal("Fitness & Training",`${trainingSummaryHtml()}
+    ${recoveryActive?`<div class="list-card recovery-status-card"><div class="row-between"><div><p class="eyebrow">SYSTEM STATUS</p><strong>RECOVERY PROTOCOL ACTIVE</strong></div><span class="tag">REST DAY</span></div><p class="meta">No hard training today. Light mobility or an easy walk is enough. Hydration, protein, and sleep count as the mission.</p></div>`:""}
     <div class="card-actions training-main-actions">
-      <button class="primary-btn" data-start-training>${data.training.activeWorkout?"Resume Workout":"Start Today's Training"}</button>
+      ${recoveryActive?`<button class="primary-btn" data-go="quests">View Recovery Quest</button>`:`<button class="primary-btn" data-start-training>${data.training.activeWorkout?"Resume Workout":"Start Today's Training"}</button><button class="secondary-btn" data-activate-recovery>Recovery Day</button>`}
       <button class="secondary-btn" data-add="weight">Log Weight</button><button class="secondary-btn" data-import-performance>Import Previous Workout</button><button class="secondary-btn" data-performance-history>Performance History</button>
     </div>
     <div class="panel training-unlocks-panel">
@@ -1695,6 +1732,7 @@ document.addEventListener("click",e=>{
   const pd=e.target.closest("[data-progress-dungeon]");if(pd){progressDungeon(pd.dataset.progressDungeon);return;}
   const ps=e.target.closest("[data-practice-skill]");if(ps){openSkillProgress(ps.dataset.practiceSkill);return;}
   if(e.target.closest("[data-start-training]")){ensureTraining();data.training.activeWorkout?renderActiveWorkout():openReadinessCheck();return;}
+  if(e.target.closest("[data-activate-recovery]")){activateRecoveryDay();return;}
   if(e.target.closest("[data-import-performance]")){openHistoricalWorkoutImport();return;}
   if(e.target.closest("[data-performance-history]")){renderPerformanceHistory();return;}
   const ls=e.target.closest("[data-log-training-set]");if(ls){logTrainingSet(Number(ls.dataset.logTrainingSet));return;}
