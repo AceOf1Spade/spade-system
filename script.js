@@ -132,6 +132,13 @@ const exerciseLibrary = [
   {id:"box_jump",name:"Box Jump",family:"Legs",focus:"Explosive Power",difficulty:"Intermediate",metric:"reps",target:5,sets:3,stat:"agility",requires:["squat"]},
   {id:"assisted_pistol",name:"Assisted Pistol Squat",family:"Legs",focus:"Single-Leg Strength",difficulty:"Hard",metric:"reps",target:6,sets:3,stat:"strength",requires:["bulgarian_split_squat"]},
   {id:"pistol_squat",name:"Pistol Squat",family:"Legs",focus:"Quads / Balance",difficulty:"Very Hard",metric:"reps",target:5,sets:3,stat:"strength",requires:["assisted_pistol"]},
+  {id:"db_hip_thrust",name:"Dumbbell Hip Thrust",family:"Legs",focus:"Glutes / Hip Extension",difficulty:"Intermediate",metric:"reps",target:12,sets:3,stat:"strength",requires:["glute_bridge"]},
+  {id:"single_leg_glute_bridge",name:"Single-Leg Glute Bridge",family:"Legs",focus:"Glutes / Hamstrings",difficulty:"Intermediate",metric:"reps",target:8,sets:3,stat:"strength",requires:["glute_bridge"]},
+  {id:"side_lying_leg_raise",name:"Side-Lying Leg Raise",family:"Legs",focus:"Glute Medius / Hip Stability",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"agility"},
+  {id:"wall_sit",name:"Wall Sit",family:"Legs",focus:"Quad Endurance",difficulty:"Intermediate",metric:"seconds",target:40,sets:3,stat:"endurance",requires:["squat"]},
+  {id:"skater_jump",name:"Skater Jump",family:"Legs",focus:"Lateral Power / Balance",difficulty:"Intermediate",metric:"reps",target:6,sets:3,stat:"agility",requires:["reverse_lunge"]},
+  {id:"broad_jump",name:"Broad Jump",family:"Legs",focus:"Horizontal Power",difficulty:"Intermediate",metric:"reps",target:3,sets:3,stat:"agility",requires:["squat"]},
+  {id:"high_knees",name:"High Knees",family:"Conditioning",focus:"Leg Speed / Conditioning",difficulty:"Beginner",metric:"seconds",target:20,sets:3,stat:"endurance"},
 
   {id:"plank",name:"Plank",family:"Core",focus:"Core Stability",difficulty:"Beginner",metric:"seconds",target:30,sets:3,stat:"discipline"},
   {id:"dead_bug",name:"Dead Bug",family:"Core",focus:"Deep Core",difficulty:"Beginner",metric:"reps",target:8,sets:3,stat:"agility"},
@@ -141,6 +148,8 @@ const exerciseLibrary = [
   {id:"russian_twist",name:"Russian Twist",family:"Core",focus:"Rotational Core",difficulty:"Intermediate",metric:"reps",target:16,sets:3,stat:"agility"},
   {id:"hollow_hold",name:"Hollow Body Hold",family:"Core",focus:"Total Core",difficulty:"Intermediate",metric:"seconds",target:20,sets:3,stat:"strength",requires:["plank"]},
   {id:"vup",name:"V-Up",family:"Core",focus:"Abs / Compression",difficulty:"Hard",metric:"reps",target:8,sets:3,stat:"strength",requires:["hollow_hold"]},
+  {id:"lying_leg_raise",name:"Lying Leg Raise",family:"Core",focus:"Lower Core / Hip Flexors",difficulty:"Intermediate",metric:"reps",target:10,sets:3,stat:"strength",requires:["knee_raise"]},
+  {id:"reverse_crunch",name:"Reverse Crunch",family:"Core",focus:"Lower Abs",difficulty:"Intermediate",metric:"reps",target:10,sets:3,stat:"strength",requires:["dead_bug"]},
 
   {id:"cat_cow",name:"Cat-Cow",family:"Mobility",focus:"Spine",difficulty:"Beginner",metric:"reps",target:8,sets:1,stat:"agility"},
   {id:"shoulder_cars",name:"Shoulder CARs",family:"Mobility",focus:"Shoulders",difficulty:"Beginner",metric:"reps",target:5,sets:1,stat:"agility"},
@@ -190,10 +199,12 @@ const TRAINING_PHASE_LIBRARY = {
     {id:"warm_jumping_jacks",name:"Easy Jumping Jacks",family:"Warm-Up",focus:"Raise Heart Rate",difficulty:"Beginner",metric:"seconds",target:45,sets:1,stat:"endurance",simple:true}
   ],
   lowerWarmup:[
-    {id:"warm_hip_9090",name:"90/90 Hip Switches",family:"Warm-Up",focus:"Hips",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility",simple:true},
-    {id:"warm_ankle_rocks",name:"Ankle Rocks",family:"Warm-Up",focus:"Ankles",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility",simple:true},
-    {id:"warm_cat_cow_lower",name:"Cat-Cow",family:"Warm-Up",focus:"Spine",difficulty:"Beginner",metric:"reps",target:8,sets:1,stat:"agility",simple:true},
-    {id:"warm_squats",name:"Easy Bodyweight Squats",family:"Warm-Up",focus:"Legs",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"strength",simple:true}
+    {id:"warm_easy_cardio",name:"Easy Walk / Jog",family:"Warm-Up",focus:"Raise Heart Rate",difficulty:"Beginner",metric:"seconds",target:120,sets:1,stat:"endurance",simple:true},
+    {id:"warm_leg_swings",name:"Leg Swings",family:"Warm-Up",focus:"Hips / Hamstrings",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility",simple:true},
+    {id:"warm_hip_circles",name:"Hip Circles",family:"Warm-Up",focus:"Hips",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility",simple:true},
+    {id:"warm_squats",name:"Easy Bodyweight Squats",family:"Warm-Up",focus:"Legs",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"strength",simple:true},
+    {id:"warm_reverse_lunges",name:"Easy Reverse Lunges",family:"Warm-Up",focus:"Hips / Legs",difficulty:"Beginner",metric:"reps",target:5,sets:1,stat:"agility",simple:true},
+    {id:"warm_ankle_rocks",name:"Ankle Rocks",family:"Warm-Up",focus:"Ankles",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility",simple:true}
   ],
   fullWarmup:[
     {id:"warm_jacks_full",name:"Easy Jumping Jacks",family:"Warm-Up",focus:"Raise Heart Rate",difficulty:"Beginner",metric:"seconds",target:45,sets:1,stat:"endurance",simple:true},
@@ -874,31 +885,52 @@ function exerciseProgress(id){
   return data.training.exerciseProgress[id]||(data.training.exerciseProgress[id]={sessions:0,totalSets:0,best:0,last:null});
 }
 function difficultyIndex(d){return TRAINING_DIFFICULTIES.indexOf(d);}
+function meetsExerciseBaseline(id){
+  const ex=exerciseLibrary.find(x=>x.id===id);
+  const p=exerciseProgress(id);
+  if(!ex||!p||p.sessions<1)return false;
+  // One clean measured session at roughly the programmed target is evidence of ability.
+  return Number(p.best||0) >= Number(ex.target||1)*0.8;
+}
+function familyAbilityScore(family){
+  let score=0;
+  exerciseLibrary.filter(ex=>ex.family===family).forEach(ex=>{
+    const p=exerciseProgress(ex.id);
+    if(!p.sessions)return;
+    if(meetsExerciseBaseline(ex.id))score += ex.difficulty==="Beginner" ? 1 : ex.difficulty==="Intermediate" ? 2 : ex.difficulty==="Hard" ? 3 : 4;
+    if(p.sessions>=3)score += 1;
+  });
+  return score;
+}
 function completedIntermediateCount(){
   return Object.entries(data.training.exerciseProgress||{}).filter(([id,p])=>{
-    const ex=exerciseLibrary.find(x=>x.id===id);return ex&&difficultyIndex(ex.difficulty)>=1&&p.sessions>=3;
+    const ex=exerciseLibrary.find(x=>x.id===id);return ex&&difficultyIndex(ex.difficulty)>=1&&p.sessions>=1&&meetsExerciseBaseline(id);
   }).length;
+}
+function familyTrainingTier(family){
+  const score=familyAbilityScore(family);
+  const n=data.training.completedSessions;
+  if(score>=18&&completedIntermediateCount()>=4)return"Very Hard";
+  if(score>=10&&completedIntermediateCount()>=2)return"Hard";
+  if(score>=3||n>=3)return"Intermediate";
+  return"Beginner";
 }
 function isExerciseUnlocked(ex){
   ensureTraining();
   if(ex.difficulty==="Beginner")return true;
-  const prereqs=(ex.requires||[]).every(id=>exerciseProgress(id).sessions>=2);
+  const prereqs=(ex.requires||[]).every(id=>meetsExerciseBaseline(id));
   if(!prereqs)return false;
-  const n=data.training.completedSessions;
-  if(ex.difficulty==="Intermediate")return n>=3;
-  if(ex.difficulty==="Hard")return n>=8&&completedIntermediateCount()>=2;
-  if(ex.difficulty==="Very Hard")return n>=16&&completedIntermediateCount()>=4;
-  if(ex.difficulty==="Expert")return n>=28&&completedIntermediateCount()>=6;
+  const familyTier=familyTrainingTier(ex.family);
+  if(ex.difficulty==="Intermediate")return difficultyIndex(familyTier)>=1;
+  if(ex.difficulty==="Hard")return difficultyIndex(familyTier)>=2;
+  if(ex.difficulty==="Very Hard")return difficultyIndex(familyTier)>=3;
+  if(ex.difficulty==="Expert")return data.training.completedSessions>=20&&completedIntermediateCount()>=6;
   return false;
 }
 function trainingTier(){
   ensureTraining();
-  const n=data.training.completedSessions;
-  if(n>=28)return"Expert";
-  if(n>=16)return"Very Hard";
-  if(n>=8)return"Hard";
-  if(n>=3)return"Intermediate";
-  return"Beginner";
+  const families=["Push","Pull","Legs","Core","Conditioning","Combat"];
+  return families.map(f=>familyTrainingTier(f)).sort((a,b)=>difficultyIndex(b)-difficultyIndex(a))[0]||"Beginner";
 }
 function readinessLabel(r){
   if(r.soreness>=3||r.energy<=1)return"Recovery";
@@ -909,9 +941,16 @@ function readinessLabel(r){
 function poolForFamilies(families){
   return exerciseLibrary.filter(ex=>families.includes(ex.family)&&isExerciseUnlocked(ex));
 }
+function selectionPriority(ex){
+  const tier=familyTrainingTier(ex.family);
+  const gap=Math.abs(difficultyIndex(tier)-difficultyIndex(ex.difficulty));
+  // Favor the highest demonstrated-safe difficulty, then foundations.
+  return gap*10 - difficultyIndex(ex.difficulty);
+}
 function selectExercises(pool,count,used=new Set()){
   const out=[];
-  for(const ex of pool){
+  const sorted=[...pool].sort((a,b)=>selectionPriority(a)-selectionPriority(b));
+  for(const ex of sorted){
     if(out.length>=count)break;
     if(used.has(ex.id))continue;
     out.push(ex);used.add(ex.id);
@@ -919,11 +958,11 @@ function selectExercises(pool,count,used=new Set()){
   return out;
 }
 function timeProfile(minutes){
-  if(minutes<=30)return{label:"Express",warmup:2,main:3,accessory:0,core:1,cooldown:1};
-  if(minutes<=45)return{label:"Short",warmup:2,main:4,accessory:1,core:1,cooldown:1};
-  if(minutes<=60)return{label:"Standard",warmup:3,main:4,accessory:2,core:2,cooldown:2};
-  if(minutes<=75)return{label:"Extended",warmup:3,main:5,accessory:2,core:2,cooldown:2};
-  return{label:"Full Session",warmup:4,main:5,accessory:3,core:3,cooldown:3};
+  if(minutes<=30)return{label:"Express",warmup:3,main:3,accessory:0,core:1,cooldown:2,mainSets:3,accessorySets:2};
+  if(minutes<=45)return{label:"Short",warmup:4,main:4,accessory:1,core:2,cooldown:3,mainSets:3,accessorySets:2};
+  if(minutes<=60)return{label:"Standard",warmup:5,main:4,accessory:2,core:3,cooldown:4,mainSets:3,accessorySets:3};
+  if(minutes<=75)return{label:"Extended",warmup:5,main:5,accessory:3,core:3,cooldown:4,mainSets:4,accessorySets:3};
+  return{label:"Full Session",warmup:6,main:5,accessory:4,core:4,cooldown:5,mainSets:4,accessorySets:3};
 }
 function clonePhaseExercise(ex,phase){
   return {...ex,phase,completedSets:[],skipped:false};
@@ -936,6 +975,16 @@ function chooseWarmup(protocol,profile){
 }
 function chooseCooldown(profile){
   return TRAINING_PHASE_LIBRARY.cooldown.slice(0,profile.cooldown).map(ex=>clonePhaseExercise(ex,"Cooldown"));
+}
+function chooseExtendedMobility(protocol,profile){
+  if(!protocol.families.includes("Legs")||profile.label==="Express"||profile.label==="Short")return[];
+  const count=profile.label==="Full Session"?6:profile.label==="Extended"?5:3;
+  const pool=exerciseLibrary.filter(ex=>ex.family==="Mobility"&&isExerciseUnlocked(ex));
+  return selectExercises(pool,count,new Set()).map(ex=>{
+    const item=clonePhaseExercise(ex,"Mobility Prep");
+    item.sets=1;
+    return item;
+  });
 }
 function scaleForReadiness(ex,state){
   const copy={...ex};
@@ -982,7 +1031,11 @@ function chooseBalancedMain(protocol,state,profile){
   }
   if(out.length<profile.main)out.push(...selectExercises(pool,profile.main-out.length,used));
 
-  return out.slice(0,profile.main).map(ex=>clonePhaseExercise(scaleForReadiness(ex,state),"Main Training"));
+  return out.slice(0,profile.main).map(ex=>{
+    const scaled=scaleForReadiness(ex,state);
+    if(state!=="Reduced"&&state!=="Recovery")scaled.sets=Math.max(scaled.sets,profile.mainSets||scaled.sets);
+    return clonePhaseExercise(scaled,"Main Training");
+  });
 }
 function chooseAccessories(protocol,state,profile,usedIds){
   if(profile.accessory<=0||state==="Recovery")return[];
@@ -990,7 +1043,11 @@ function chooseAccessories(protocol,state,profile,usedIds){
     .filter(ex=>!usedIds.has(ex.id)&&["Push","Pull","Legs","Conditioning","Combat"].includes(ex.family));
   if(state==="Reduced")pool=pool.filter(ex=>difficultyIndex(ex.difficulty)<=difficultyIndex("Intermediate"));
   return selectExercises(pool,profile.accessory,new Set(usedIds))
-    .map(ex=>clonePhaseExercise(scaleForReadiness(ex,state),"Accessories"));
+    .map(ex=>{
+      const scaled=scaleForReadiness(ex,state);
+      if(state!=="Reduced"&&state!=="Recovery")scaled.sets=Math.max(scaled.sets,profile.accessorySets||scaled.sets);
+      return clonePhaseExercise(scaled,"Accessories");
+    });
 }
 function chooseCoreMobility(protocol,state,profile,usedIds){
   let fams=["Core","Mobility"];
@@ -1021,6 +1078,7 @@ function generateRecommendedWorkout(readiness){
   else if(state==="Reduced")name=`Reduced ${protocol.name}`;
 
   const warmup=chooseWarmup(protocol,profile);
+  const mobilityPrep=chooseExtendedMobility(protocol,profile);
   const main=chooseBalancedMain(protocol,state,profile);
   const usedIds=new Set(main.map(e=>e.id));
   const accessory=chooseAccessories(protocol,state,profile,usedIds);
@@ -1028,11 +1086,12 @@ function generateRecommendedWorkout(readiness){
   const core=chooseCoreMobility(protocol,state,profile,usedIds);
   const cooldown=chooseCooldown(profile);
 
-  const exercises=[...warmup,...main,...accessory,...core,...cooldown];
+  const exercises=[...warmup,...mobilityPrep,...main,...accessory,...core,...cooldown];
   const workout={
     id:uid("tw"),date:todayKey(),name,
     readiness:{...readiness,state},
     tier:trainingTier(),
+    capabilityTier:protocol.families.includes("Legs")?familyTrainingTier("Legs"):trainingTier(),
     durationProfile:profile.label,
     targetMinutes:readiness.time,
     startedAt:new Date().toISOString(),
@@ -1066,7 +1125,7 @@ function targetText(ex){
   return `${ex.sets} × ${ex.target} ${ex.metric}`;
 }
 function phaseOrder(){
-  return ["Warm-Up","Main Training","Accessories","Core & Mobility","Cooldown"];
+  return ["Warm-Up","Mobility Prep","Main Training","Accessories","Core & Mobility","Cooldown"];
 }
 function renderActiveWorkout(){
   ensureTraining();
@@ -1099,7 +1158,7 @@ function renderActiveWorkout(){
 
   openModal(w.name,`
     <div class="training-header-card">
-      <div><p class="eyebrow">ACTIVE TRAINING</p><h3>${esc(w.readiness.state)} Readiness · ${esc(w.tier)} Tier</h3><p class="meta">${esc(w.durationProfile||"Session")} · Target ${w.targetMinutes||w.readiness.time} min · ${done}/${total} items logged</p></div>
+      <div><p class="eyebrow">ACTIVE TRAINING</p><h3>${esc(w.readiness.state)} Readiness · ${esc(w.capabilityTier||w.tier)} Capability</h3><p class="meta">${esc(w.durationProfile||"Session")} · Target ${w.targetMinutes||w.readiness.time} min · ${done}/${total} items logged</p></div>
       <button class="secondary-btn" data-abandon-workout>Regenerate</button>
     </div>
     <div class="training-progress"><div style="width:${total?done/total*100:0}%"></div></div>
