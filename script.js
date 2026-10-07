@@ -236,6 +236,7 @@ const defaultData = {
   customQuests:[],
   questHistory:[],
   bosses:[],
+  bossSystem:{lastRollDate:null,pity:0,lastSpawnDate:null,defeatedSystemBosses:0},
   dungeons:[],
   goals:[
     {id:"artist",name:"Become a Complete Artist",type:"milestone",progress:0,status:"Primary"},
@@ -695,9 +696,15 @@ function renderQuestTab(tab="daily"){
   } else if(tab==="custom"){
     el.innerHTML=`<div class="list-stack">${data.customQuests.length?data.customQuests.map(q=>`<article class="list-card"><div class="row-between"><strong>${esc(q.name)}</strong><span class="tag">${esc(q.difficulty||"Normal")}</span></div><p class="meta">${esc(q.category||"Custom")} · ${esc(q.date||"No deadline")}</p><p class="meta">${esc(q.notes||"")}</p><div class="card-actions">${q.completed?"<span class='tag'>Completed</span>":`<button class="primary-btn" data-complete-custom="${q.id}">Complete</button>`}<button class="danger-btn" data-delete-custom="${q.id}">Delete</button></div></article>`).join(""):`<div class="list-card"><strong>No custom quests yet.</strong><p class="meta">Use + Custom for gigs, assignments, interviews, projects, appointments, or goals.</p></div>`}</div>`;
   } else if(tab==="bosses"){
-    const unlocked=data.player.level>=3;
-    el.innerHTML=!unlocked?`<div class="list-card"><strong>Boss System Locked</strong><p class="meta">Reach Level 3 to convert major real-world objectives into boss encounters.</p></div>`:
-    `<div class="list-stack">${data.bosses.length?data.bosses.map(b=>`<article class="list-card"><div class="row-between"><strong>${esc(b.name)}</strong><span class="tag">${esc(b.rank||"E-Rank")}</span></div><p class="meta">${esc(b.description||"")}</p><div class="progress-track" style="margin-top:10px"><div class="progress-fill" style="width:${100-(b.hp/b.maxHp*100)}%"></div></div><p class="meta">HP ${b.hp}/${b.maxHp}</p><div class="card-actions"><button class="primary-btn" data-damage-boss="${b.id}">Complete Phase</button></div></article>`).join(""):`<div class="list-card"><strong>No active bosses.</strong><p class="meta">Create a custom quest and mark it as a Boss.</p></div>`}</div>`;
+    const unlocked=(data.player.level||1)>=3||data.bosses.length>0;
+    if(unlocked){maybeSpawnSystemBoss();}
+    const active=data.bosses.filter(b=>!b.defeated);
+    const defeated=data.bosses.filter(b=>b.defeated).slice(0,5);
+    el.innerHTML=!unlocked?`<div class="list-card"><strong>Boss System Locked</strong><p class="meta">Reach Level 3. Once unlocked, the System can generate real boss encounters automatically.</p></div>`:
+    `<div class="list-stack">
+      ${active.length?active.map(b=>b.source==="system"?systemBossCard(b):legacyBossCard(b)).join(""):`<div class="list-card"><strong>No active boss signal.</strong><p class="meta">The System rolls for a new Boss once per day. Failed rolls increase the next appearance chance.</p><button class="secondary-btn" style="margin-top:10px" data-force-boss-scan>Emergency Boss Scan</button></div>`}
+      ${defeated.length?`<div class="list-card"><p class="eyebrow">DEFEATED BOSSES</p>${defeated.map(b=>`<p class="meta">✓ ${esc(b.name)} · ${esc(b.defeatedDate||"")}</p>`).join("")}</div>`:""}
+    </div>`;
   } else if(tab==="dungeons"){
     const unlocked=data.player.level>=5;
     el.innerHTML=!unlocked?`<div class="list-card"><strong>Dungeons Locked</strong><p class="meta">Reach Level 5.</p></div>`:
@@ -710,14 +717,189 @@ function completeCustom(id){
   const q=data.customQuests.find(x=>x.id===id);if(!q||q.completed)return;
   q.completed=true;const xp={Easy:10,Normal:20,Challenging:30,Hard:40,"Very Hard":60,Elite:75}[q.difficulty]||20;addXP(xp);addCoins(q.difficulty==="Hard"?2:1);addStat(q.stat||"discipline",Math.max(5,Math.round(xp*.6)));applyQuestSkillEvidence(q,{type:"Custom",date:todayKey(),sourceId:q.id});data.legacy.quests++;data.questHistory.unshift({date:todayKey(),title:q.name,type:"Custom",xp});if(q.type==="Boss"){createBossFromQuest(q);}save();renderAll();toast(`QUEST COMPLETE · +${xp} XP`);
 }
+
+const SYSTEM_BOSS_TEMPLATES = [
+  {
+    id:"iron_warden",name:"IRON WARDEN",title:"Keeper of the Unfinished Set",rank:"C-Rank",
+    description:"A physical trial that tests whether your training is becoming real capacity instead of isolated effort.",
+    theme:"Athlete",skills:["Weight Training","Core Strength","Running","Explosive Power"],
+    requirements:[
+      {kind:"trainingSessions",label:"Clear 2 complete training sessions",target:2},
+      {kind:"skillXp",skill:"Weight Training",label:"Gain 18 Weight Training skill XP",target:18},
+      {kind:"quests",label:"Complete 4 quests while the boss is active",target:4}
+    ]
+  },
+  {
+    id:"focus_reaper",name:"FOCUS REAPER",title:"Devourer of Split Attention",rank:"C-Rank",
+    description:"It feeds on unfinished work. Defeat it by proving sustained focus across several real actions.",
+    theme:"Discipline",skills:["Focus","Time Management","Responsibility","Consistency"],
+    requirements:[
+      {kind:"skillXp",skill:"Focus",label:"Gain 15 Focus skill XP",target:15},
+      {kind:"skillXp",skill:"Time Management",label:"Gain 12 Time Management skill XP",target:12},
+      {kind:"quests",label:"Complete 5 quests while the boss is active",target:5}
+    ]
+  },
+  {
+    id:"stage_phantom",name:"STAGE PHANTOM",title:"Echo Beneath the Spotlight",rank:"C-Rank",
+    description:"A creative boss that only yields to practiced performance and finished artistic work.",
+    theme:"Artist",skills:["DJing","Performance","Confidence","Content Creation"],
+    requirements:[
+      {kind:"skillXp",skill:"DJing",label:"Gain 15 DJing skill XP",target:15},
+      {kind:"skillSessions",skill:"DJing",label:"Log 2 new DJing sessions",target:2},
+      {kind:"quests",label:"Complete 3 creative or general quests",target:3}
+    ]
+  },
+  {
+    id:"scholar_sentinel",name:"SCHOLAR SENTINEL",title:"Guardian of the Closed Book",rank:"C-Rank",
+    description:"A knowledge trial. It falls only when studying becomes measurable progress.",
+    theme:"Scholar",skills:["Academics","Focus","Vocabulary","Speaking"],
+    requirements:[
+      {kind:"skillXp",skill:"Academics",label:"Gain 15 Academics skill XP",target:15},
+      {kind:"skillSessions",skill:"Academics",label:"Log 2 new academic sessions",target:2},
+      {kind:"quests",label:"Complete 4 quests while the boss is active",target:4}
+    ]
+  },
+  {
+    id:"network_broker",name:"THE NETWORK BROKER",title:"Collector of Silent Opportunities",rank:"C-Rank",
+    description:"A social trial built around useful conversations, outreach, and showing up with intent.",
+    theme:"Charisma",skills:["Networking","Conversation","Confidence","Performance"],
+    requirements:[
+      {kind:"skillXp",skill:"Networking",label:"Gain 12 Networking skill XP",target:12},
+      {kind:"skillXp",skill:"Conversation",label:"Gain 10 Conversation skill XP",target:10},
+      {kind:"quests",label:"Complete 3 quests while the boss is active",target:3}
+    ]
+  },
+  {
+    id:"creator_construct",name:"CREATOR CONSTRUCT",title:"The Half-Built Machine",rank:"C-Rank",
+    description:"It represents projects that stay almost finished. Progress comes from shipping real creative work.",
+    theme:"Creator",skills:["Content Creation","Design","HTML","CSS","JavaScript","Web Design"],
+    requirements:[
+      {kind:"skillXp",skill:"Content Creation",label:"Gain 12 Content Creation skill XP",target:12},
+      {kind:"quests",label:"Complete 4 quests while the boss is active",target:4},
+      {kind:"skillSessions",skill:"Focus",label:"Log 2 new Focus sessions",target:2}
+    ]
+  }
+];
+
+function ensureBossSystem(){
+  data.bossSystem=data.bossSystem||{lastRollDate:null,pity:0,lastSpawnDate:null,defeatedSystemBosses:0};
+  data.bosses=data.bosses||[];
+}
+function activeSystemBoss(){
+  ensureBossSystem();
+  return data.bosses.find(b=>b.source==="system"&&!b.defeated);
+}
+function skillSnapshot(name){
+  const sk=findSkillByName(name);
+  return {xp:sk?.xp||0,practice:sk?.practice||0,days:(sk?.practiceDays||[]).length};
+}
+function requirementBaseline(req){
+  if(req.kind==="trainingSessions")return data.training?.completedSessions||0;
+  if(req.kind==="quests")return data.legacy?.quests||0;
+  if(req.kind==="skillXp")return skillSnapshot(req.skill).xp;
+  if(req.kind==="skillSessions")return skillSnapshot(req.skill).practice;
+  return 0;
+}
+function bossRequirementProgress(req){
+  const base=Number(req.baseline||0);
+  let now=base;
+  if(req.kind==="trainingSessions")now=data.training?.completedSessions||0;
+  if(req.kind==="quests")now=data.legacy?.quests||0;
+  if(req.kind==="skillXp")now=skillSnapshot(req.skill).xp;
+  if(req.kind==="skillSessions")now=skillSnapshot(req.skill).practice;
+  return Math.max(0,now-base);
+}
+function requirementReady(req){return bossRequirementProgress(req)>=Number(req.target||1);}
+function bossScale(){
+  const lvl=data.player.level||1;
+  if(lvl>=20)return{rank:"B-Rank",xp:150,coins:35,hp:450};
+  if(lvl>=10)return{rank:"C-Rank",xp:125,coins:28,hp:375};
+  return{rank:"C-Rank",xp:100,coins:20,hp:300};
+}
+function eligibleBossTemplates(){
+  // Prefer bosses that use at least one already-discovered skill so every system boss is actionable.
+  const usable=SYSTEM_BOSS_TEMPLATES.filter(t=>t.skills.some(name=>{const sk=findSkillByName(name);return sk&&sk.state!=="Locked";}));
+  return usable.length?usable:SYSTEM_BOSS_TEMPLATES;
+}
+function spawnSystemBoss(force=false){
+  ensureBossSystem();
+  if((data.player.level||1)<3)return null;
+  const existing=activeSystemBoss();if(existing)return existing;
+  const key=todayKey();
+  if(!force && data.bossSystem.lastRollDate===key)return null;
+
+  const random=rng(seedFromText(`boss:${key}:${data.player.level}:${data.legacy.quests}:${data.bossSystem.defeatedSystemBosses}`));
+  const chance=Math.min(.9,.42+(data.bossSystem.pity||0)*.18);
+  data.bossSystem.lastRollDate=key;
+  if(!force && random()>chance){data.bossSystem.pity=(data.bossSystem.pity||0)+1;save();return null;}
+
+  const template=pick(eligibleBossTemplates(),random);
+  const scale=bossScale();
+  const reqs=template.requirements.map((r,i)=>({...r,id:`req_${i}_${uid("br")}`,baseline:requirementBaseline(r),claimed:false}));
+  const boss={
+    id:uid("boss"),source:"system",templateId:template.id,name:template.name,title:template.title,
+    theme:template.theme,description:template.description,rank:scale.rank,hp:scale.hp,maxHp:scale.hp,
+    createdDate:key,rewardXP:scale.xp,rewardCoins:scale.coins,requirements:reqs,defeated:false
+  };
+  data.bosses.unshift(boss);
+  data.bossSystem.lastSpawnDate=key;data.bossSystem.pity=0;
+  data.timeline.unshift({date:key,text:`System Boss appeared: ${boss.name}`});
+  save();return boss;
+}
+function maybeSpawnSystemBoss(){
+  ensureBossSystem();
+  if((data.player.level||1)>=3&&!activeSystemBoss())spawnSystemBoss(false);
+}
+function bossPhaseDamage(b){return Math.ceil(b.maxHp/Math.max(1,b.requirements?.length||3));}
+function claimBossRequirement(bossId,reqId){
+  const b=data.bosses.find(x=>x.id===bossId);if(!b||b.defeated)return;
+  const r=(b.requirements||[]).find(x=>x.id===reqId);if(!r||r.claimed)return;
+  if(!requirementReady(r)){toast("REQUIREMENT NOT CLEARED YET");return;}
+  r.claimed=true;b.hp=Math.max(0,b.hp-bossPhaseDamage(b));
+  const all=(b.requirements||[]).every(x=>x.claimed);
+  if(all||b.hp===0)defeatBoss(b);
+  save();renderQuestTab("bosses");renderAll();
+}
+function defeatBoss(b){
+  if(!b||b.defeated)return;
+  b.defeated=true;b.hp=0;b.defeatedDate=todayKey();
+  data.legacy.bosses++;if(b.source==="system")data.bossSystem.defeatedSystemBosses=(data.bossSystem.defeatedSystemBosses||0)+1;
+  addXP(b.rewardXP||100);addCoins(b.rewardCoins||20);companionBond(10);
+  data.inventory.trophies.push(`${b.name} Trophy`);
+  data.timeline.unshift({date:todayKey(),text:`Boss defeated: ${b.name}`});
+  toast(`BOSS DEFEATED · +${b.rewardXP||100} XP · ◈${b.rewardCoins||20}`);
+}
+function systemBossCard(b){
+  const reqs=(b.requirements||[]).map((r,i)=>{
+    const progress=bossRequirementProgress(r),ready=requirementReady(r),pct=Math.min(100,(progress/Math.max(1,r.target))*100);
+    return `<div class="boss-requirement ${r.claimed?"claimed":""}">
+      <div class="row-between"><strong>PHASE ${i+1} · ${esc(r.label)}</strong><span class="tag">${r.claimed?"CLEARED":`${Math.min(progress,r.target)}/${r.target}`}</span></div>
+      <div class="mini-progress"><div class="mini-progress-fill" style="width:${r.claimed?100:pct}%"></div></div>
+      ${!r.claimed?`<button class="${ready?"primary-btn":"secondary-btn"}" style="margin-top:10px" data-claim-boss-req="${b.id}|${r.id}" ${ready?"":"disabled"}>${ready?"Claim Phase":"Requirement Incomplete"}</button>`:""}
+    </div>`;
+  }).join("");
+  const cleared=(b.requirements||[]).filter(r=>r.claimed).length,total=(b.requirements||[]).length;
+  return `<article class="list-card boss-card">
+    <div class="row-between"><div><p class="eyebrow">SYSTEM BOSS · ${esc(b.theme||"Trial")}</p><strong class="boss-name">${esc(b.name)}</strong><p class="meta">${esc(b.title||"")}</p></div><span class="tag">${esc(b.rank||"C-Rank")}</span></div>
+    <p class="meta" style="margin-top:10px">${esc(b.description||"")}</p>
+    <div class="progress-track" style="margin-top:14px"><div class="progress-fill" style="width:${100-(b.hp/b.maxHp*100)}%"></div></div>
+    <p class="meta">HP ${b.hp}/${b.maxHp} · ${cleared}/${total} phases cleared</p>
+    <div class="boss-requirements">${reqs}</div>
+    <p class="meta boss-reward">REWARD · +${b.rewardXP||100} XP · ◈${b.rewardCoins||20} · Trophy · +10 SHADE Bond</p>
+  </article>`;
+}
+function legacyBossCard(b){
+  return `<article class="list-card"><div class="row-between"><strong>${esc(b.name)}</strong><span class="tag">${esc(b.rank||"E-Rank")}</span></div><p class="meta">${esc(b.description||"")}</p><div class="progress-track" style="margin-top:10px"><div class="progress-fill" style="width:${100-(b.hp/b.maxHp*100)}%"></div></div><p class="meta">HP ${b.hp}/${b.maxHp}</p><div class="card-actions"><button class="primary-btn" data-damage-boss="${b.id}">Complete Phase</button></div></article>`;
+}
 function createBossFromQuest(q){
   if(data.bosses.some(b=>b.sourceId===q.id))return;
   data.bosses.push({id:uid("boss"),sourceId:q.id,name:q.name,description:q.notes,rank:q.difficulty==="Elite"?"A-Rank":"C-Rank",hp:300,maxHp:300,phases:3});
 }
 function damageBoss(id){
-  const b=data.bosses.find(x=>x.id===id);if(!b)return;
-  b.hp=Math.max(0,b.hp-Math.ceil(b.maxHp/b.phases));
-  if(b.hp===0){data.legacy.bosses++;addXP(100);addCoins(20);companionBond(10);data.timeline.unshift({date:todayKey(),text:`Boss defeated: ${b.name}`});toast("BOSS DEFEATED · +100 XP · ◈20");}
+  const b=data.bosses.find(x=>x.id===id);if(!b||b.defeated)return;
+  if(b.source==="system"){toast("SYSTEM BOSSES REQUIRE PHASE CONDITIONS");return;}
+  b.hp=Math.max(0,b.hp-Math.ceil(b.maxHp/(b.phases||3)));
+  if(b.hp===0){b.rewardXP=b.rewardXP||100;b.rewardCoins=b.rewardCoins||20;defeatBoss(b);}
   save();renderQuestTab("bosses");renderAll();
 }
 function generateDungeon(){
@@ -1507,6 +1689,8 @@ document.addEventListener("click",e=>{
   const cc=e.target.closest("[data-complete-custom]");if(cc){completeCustom(cc.dataset.completeCustom);return;}
   const del=e.target.closest("[data-delete-custom]");if(del){data.customQuests=data.customQuests.filter(x=>x.id!==del.dataset.deleteCustom);save();renderQuestTab("custom");return;}
   const db=e.target.closest("[data-damage-boss]");if(db){damageBoss(db.dataset.damageBoss);return;}
+  const cbr=e.target.closest("[data-claim-boss-req]");if(cbr){const [bossId,reqId]=cbr.dataset.claimBossReq.split("|");claimBossRequirement(bossId,reqId);return;}
+  if(e.target.closest("[data-force-boss-scan]")){const b=spawnSystemBoss(true);save();renderQuestTab("bosses");renderAll();toast(b?`BOSS DETECTED · ${b.name}`:"NO BOSS AVAILABLE");return;}
   if(e.target.closest("[data-generate-dungeon]")){generateDungeon();return;}
   const pd=e.target.closest("[data-progress-dungeon]");if(pd){progressDungeon(pd.dataset.progressDungeon);return;}
   const ps=e.target.closest("[data-practice-skill]");if(ps){openSkillProgress(ps.dataset.practiceSkill);return;}
@@ -1541,6 +1725,6 @@ document.getElementById("focusButton").addEventListener("click",()=>{
 });
 
 function initialize(){
-  ensureTraining();initSkills();syncUnsyncedPerformanceHistory();initDaily();initWeekly();reconcileCompletedQuestSkills();initNutrition();data.player.requiredXP=requiredXP(data.player.level);data.player.rank=rankFor(data.player.level);renderAll();console.log("♠ SPADE SYSTEM ONLINE",data);
+  ensureTraining();ensureBossSystem();initSkills();syncUnsyncedPerformanceHistory();initDaily();initWeekly();reconcileCompletedQuestSkills();initNutrition();data.player.requiredXP=requiredXP(data.player.level);data.player.rank=rankFor(data.player.level);maybeSpawnSystemBoss();renderAll();console.log("♠ SPADE SYSTEM ONLINE",data);
 }
 initialize();
