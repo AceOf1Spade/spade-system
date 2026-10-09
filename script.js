@@ -181,14 +181,145 @@ const exerciseLibrary = [
 ];
 
 const WEEKLY_TRAINING_PROTOCOL = {
-  0:{name:"Recovery Protocol",families:["Mobility","Balance","Core"],intensity:"Recovery"},
-  1:{name:"Upper Body + Conditioning",families:["Push","Pull","Core","Conditioning"],intensity:"Normal"},
-  2:{name:"Lower Body",families:["Legs","Core","Mobility"],intensity:"Normal"},
-  3:{name:"Pull + Core",families:["Pull","Core","Mobility"],intensity:"Normal"},
-  4:{name:"Mobility + Calisthenics Control",families:["Mobility","Balance","Core","Push","Pull"],intensity:"Control"},
-  5:{name:"Athletic Power + Combat",families:["Legs","Conditioning","Combat","Core"],intensity:"Hard"},
-  6:{name:"Full Body / Optional Conditioning",families:["Push","Pull","Legs","Core","Conditioning"],intensity:"Normal"}
+  0:{name:"Recovery / Optional Easy Walk",families:["Mobility","Balance","Core"],intensity:"Recovery"},
+  1:{name:"Upper Body + Conditioning",families:["Push","Pull","Conditioning","Core"],intensity:"Normal"},
+  2:{name:"Lower Body Strength",families:["Legs","Core","Mobility"],intensity:"Normal"},
+  3:{name:"Rest Day · Recovery",families:["Mobility","Balance"],intensity:"Recovery"},
+  4:{name:"Full-Body Calisthenics · V-Taper + Mobility",families:["Pull","Push","Legs","Balance","Mobility","Core"],intensity:"Control"},
+  5:{name:"Upper Body + Full Body Strength",families:["Push","Pull","Legs","Combat","Core","Mobility"],intensity:"Hard"},
+  6:{name:"Conditioning + Boxing",families:["Combat","Conditioning","Mobility","Core"],intensity:"Normal"}
 };
+
+// Structured templates preserve the user's training split and session sequence.
+// Exercises are never silently replaced by an unrelated family just to fill slots.
+const SPADE_STRUCTURED_DAYS = {
+  4:[
+    ["Warm-Up",[["warm_easy_cardio",1,120],["warm_arm_circles",1,10],["warm_scapular_pullup",1,8],["warm_squats",1,10]]],
+    ["Pull · V-Taper",[["pullup",3,4],["chinup",3,4],["high_body_row",3,10],["australian_face_pull",2,10]]],
+    ["Push · Shoulders + Chest",[["pushup",3,12],["pike_pushup",3,6],["dip",3,6],["wall_walk",2,3]]],
+    ["Legs · Bodyweight Control",[["squat",3,12],["reverse_lunge",2,8],["glute_bridge",2,12],["calf_raise",2,15]]],
+    ["Skills · Control + Balance",[["passive_hang",2,30],["single_leg_stand",2,30]]],
+    ["Inside · Mobility",[["shoulder_cars",1,5],["thoracic_rotations",1,6],["cat_cow",1,8],["hip_9090",1,10],["cossack_squat",2,6],["deep_squat_hold",1,30],["ankle_rocks",1,10]]],
+    ["Inside · Core",[["knee_raise",3,10],["dead_bug",2,8],["side_plank",2,25],["hollow_hold",2,20]]],
+    ["Cooldown",[["cool_chest",1,30],["cool_lat",1,30],["cool_hip",1,30],["cool_hamstring",1,30],["cool_breath",1,5]]]
+  ],
+  5:[
+    ["Warm-Up",[["warm_easy_cardio",1,180],["warm_arm_circles",1,10],["warm_squats",1,10],["warm_scapular_pullup",1,8],["warm_pushup",1,8]]],
+    ["Upper Body Strength",[["pullup",4,5],["dumbbell_bench_press",4,10],["db_chest_supported_row",4,10],["db_overhead_press",4,8],["dip",4,8]]],
+    ["Strength Accessories",[["hammer_curl",3,10],["dumbbell_lateral_raise",3,10],["db_rdl",3,10],["goblet_squat",3,10]]],
+    ["Athletic Finisher",[["explosive_pushup",2,5],["jump_squat",2,5],["bag_open_round",2,45]]],
+    ["Inside · Mobility",[["neck_turns",1,5],["shoulder_cars",1,5],["thoracic_rotations",1,6],["cat_cow",1,8],["hip_cars",1,5],["hip_9090",1,10],["frog_rocks",1,10],["deep_squat_hold",1,30],["ankle_rocks",1,10]]],
+    ["Inside · Core",[["lying_leg_raise",3,10],["dead_bug",3,8],["side_plank",3,25],["reverse_crunch",3,10],["hollow_hold",3,20]]],
+    ["Cooldown",[["cool_chest",1,30],["cool_lat",1,30],["cool_hip",1,30],["cool_hamstring",1,30],["cool_frog",1,45],["cool_breath",1,5]]]
+  ],
+  6:[
+    ["Warm-Up",[["warm_easy_cardio",1,180],["warm_arm_circles",1,10],["warm_hip_circles",1,10]]],
+    ["Conditioning",[["steady_jog",1,10],["jumping_jacks",3,45],["mountain_climbers",3,30]]],
+    ["Boxing · Technique",[["bag_jab",2,45],["bag_fixed_punch",3,60],["bag_12_exit",3,60],["bag_slip_combo",3,60]]],
+    ["Inside · Mobility",[["shoulder_cars",1,5],["hip_9090",1,10],["cat_cow",1,8]]],
+    ["Inside · Core",[["plank",3,30],["dead_bug",2,8]]],
+    ["Cooldown",[["cool_shoulder",1,30],["cool_hip",1,30],["cool_breath",1,5]]]
+  ]
+};
+
+// V1.6: weekly templates are editable per device and preserved in the existing save.
+const SPADE_WEEKLY_DEFAULTS = {
+  0:[["Recovery Walk / Mobility",[["warm_easy_cardio",1,600],["cat_cow",1,8],["hip_9090",1,10],["cool_breath",1,5]]]],
+  1:[
+    ["Warm-Up",[["warm_easy_cardio",1,180],["warm_arm_circles",1,10],["warm_scapular_pullup",1,8],["warm_pushup",1,8]]],
+    ["Upper Body Strength",[["pullup",3,5],["pushup",3,12],["db_chest_supported_row",3,10],["db_overhead_press",3,8],["dip",3,8]]],
+    ["Conditioning",[["steady_jog",1,10],["bag_open_round",2,45]]],
+    ["Inside · Mobility",[["shoulder_cars",1,5],["thoracic_rotations",1,6],["hip_9090",1,10],["ankle_rocks",1,10]]],
+    ["Inside · Core",[["dead_bug",3,8],["knee_raise",3,10],["side_plank",2,25]]],
+    ["Cooldown",[["cool_chest",1,30],["cool_lat",1,30],["cool_breath",1,5]]]
+  ],
+  2:[
+    ["Warm-Up",[["warm_easy_cardio",1,180],["warm_leg_swings",1,10],["warm_hip_circles",1,10],["warm_squats",1,10]]],
+    ["Lower Body Strength",[["goblet_squat",3,10],["db_rdl",3,10],["bulgarian_split_squat",3,8],["glute_bridge",3,12],["calf_raise",3,15]]],
+    ["Leg Accessories",[["reverse_lunge",2,10],["wall_sit",2,40]]],
+    ["Inside · Mobility",[["hip_9090",1,10],["cat_cow",1,8],["ankle_rocks",1,10]]],
+    ["Inside · Core",[["plank",3,30],["dead_bug",3,8]]],
+    ["Cooldown",[["cool_hip",1,30],["cool_hamstring",1,30],["cool_breath",1,5]]]
+  ],
+  3:[["Recovery",[["cat_cow",1,8],["hip_9090",1,10],["shoulder_cars",1,5],["cool_breath",1,5]]]]
+};
+Object.assign(SPADE_STRUCTURED_DAYS,SPADE_WEEKLY_DEFAULTS);
+const SPADE_WEEKDAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+function weeklyTemplates(){
+  ensureTraining();
+  if(!data.training.weeklyTemplates || typeof data.training.weeklyTemplates!=="object")data.training.weeklyTemplates={};
+  return data.training.weeklyTemplates;
+}
+function templateForDay(day){
+  const saved=weeklyTemplates()[day];
+  return Array.isArray(saved)?saved:SPADE_STRUCTURED_DAYS[day];
+}
+function templateCatalog(){
+  return [...exerciseLibrary,...Object.values(TRAINING_PHASE_LIBRARY).flat()]
+    .filter((e,i,a)=>a.findIndex(x=>x.id===e.id)===i)
+    .sort((a,b)=>a.name.localeCompare(b.name));
+}
+function openWeeklyTemplateEditor(day=new Date().getDay()){
+  day=Number(day);
+  const groups=templateForDay(day);
+  const catalog=templateCatalog();
+  const options=catalog.map(e=>`<option value="${esc(e.id)}">${esc(e.name)} · ${esc(e.family)}${isExerciseUnlocked(e)?"":" (locked)"}</option>`).join("");
+  openModal("Weekly Training Templates",`
+    <p class="meta">Edit your plan without changing completed workout history. Changes apply to newly generated sessions, not the workout already in progress.</p>
+    <div class="card-actions">${SPADE_WEEKDAYS.map((name,i)=>`<button class="${i===day?"primary-btn":"secondary-btn"}" data-template-day="${i}">${name.slice(0,3)}</button>`).join("")}</div>
+    <div class="list-card"><strong>${SPADE_WEEKDAYS[day]} · ${esc(WEEKLY_TRAINING_PROTOCOL[day].name)}</strong><p class="meta">${day===3?"Rest day: optional easy recovery only.":day===0?"Optional recovery only.":"Training order follows the phases below."}</p></div>
+    <div class="list-stack">${groups.map(([phase,entries],gi)=>`
+      <section class="list-card">
+        <div class="row-between"><strong>${esc(phase)}</strong><button class="secondary-btn" data-template-remove-phase="${day}|${gi}">Remove phase</button></div>
+        ${entries.map(([id,sets,target],ei)=>{
+          const item=catalog.find(e=>e.id===id);
+          return `<div class="template-edit-row" style="margin:10px 0;padding:10px;border:1px solid #383340;border-radius:12px">
+            <label class="meta">Exercise</label><select data-template-exercise="${gi}|${ei}" style="width:100%;padding:10px;border-radius:8px;background:#191720;color:white">${item?`<option value="${esc(id)}">${esc(item.name)}</option>`:`<option value="${esc(id)}">${esc(id)} (missing)</option>`}${options}</select>
+            <div style="display:flex;gap:8px;margin-top:8px"><label style="flex:1">Sets<input type="number" min="1" max="10" value="${sets}" data-template-sets="${gi}|${ei}" style="width:100%"></label><label style="flex:1">Target<input type="number" min="1" max="3600" value="${target}" data-template-target="${gi}|${ei}" style="width:100%"></label></div>
+            <button class="secondary-btn" data-template-remove="${gi}|${ei}" style="margin-top:8px">Remove exercise</button>
+          </div>`;
+        }).join("")}
+        <button class="secondary-btn" data-template-add="${gi}">+ Add exercise</button>
+      </section>`).join("")}</div>
+    <div class="card-actions"><button class="secondary-btn" data-template-add-phase>+ Add phase</button><button class="primary-btn" data-template-save>Save ${SPADE_WEEKDAYS[day]} Template</button><button class="secondary-btn" data-template-reset>Restore Default</button></div>
+  `,"WEEKLY PROGRAM");
+  const modal=document.querySelector('[data-template-save]');
+  if(modal)modal.dataset.templateSave=String(day);
+  for(const el of document.querySelectorAll('[data-template-day],[data-template-add-phase],[data-template-reset]'))el.dataset.editingDay=String(day);
+}
+function readTemplateEditor(day){
+  const groups=JSON.parse(JSON.stringify(templateForDay(day)));
+  document.querySelectorAll("[data-template-exercise]").forEach(el=>{
+    const [gi,ei]=el.dataset.templateExercise.split("|").map(Number);
+    if(groups[gi]?.[1]?.[ei])groups[gi][1][ei][0]=el.value;
+  });
+  document.querySelectorAll("[data-template-sets]").forEach(el=>{
+    const [gi,ei]=el.dataset.templateSets.split("|").map(Number);
+    if(groups[gi]?.[1]?.[ei])groups[gi][1][ei][1]=Math.max(1,Math.min(10,Number(el.value)||1));
+  });
+  document.querySelectorAll("[data-template-target]").forEach(el=>{
+    const [gi,ei]=el.dataset.templateTarget.split("|").map(Number);
+    if(groups[gi]?.[1]?.[ei])groups[gi][1][ei][2]=Math.max(1,Math.min(3600,Number(el.value)||1));
+  });
+  return groups;
+}
+function persistTemplate(day,groups){
+  weeklyTemplates()[day]=groups;
+  save();
+  openWeeklyTemplateEditor(day);
+}
+const SPADE_EXTRA_MOVEMENTS = [
+  {id:"warm_scapular_pullup",name:"Scapular Pull-Ups",family:"Warm-Up",focus:"Shoulder Blades / Lats",difficulty:"Beginner",metric:"reps",target:8,sets:1,stat:"agility",simple:true},
+  {id:"warm_pushup",name:"Easy Push-Ups",family:"Warm-Up",focus:"Upper Body Activation",difficulty:"Beginner",metric:"reps",target:8,sets:1,stat:"strength",simple:true},
+  {id:"bag_open_round",name:"Heavy Bag: Mixed Combinations",family:"Combat",focus:"Jab / Cross / Hooks / Movement",difficulty:"Beginner",metric:"seconds",target:45,sets:2,stat:"agility"},
+  {id:"db_chest_supported_row",name:"Chest-Supported Dumbbell Row",family:"Pull",focus:"Mid Back / Lats",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"strength"},
+  {id:"neck_turns",name:"Neck Turns + Side Tilts",family:"Mobility",focus:"Neck",difficulty:"Beginner",metric:"reps",target:5,sets:1,stat:"agility"},
+  {id:"thoracic_rotations",name:"Thoracic Rotations",family:"Mobility",focus:"Upper Back",difficulty:"Beginner",metric:"reps",target:6,sets:1,stat:"agility"},
+  {id:"hip_cars",name:"Hip CARs",family:"Mobility",focus:"Hip Control",difficulty:"Beginner",metric:"reps",target:5,sets:1,stat:"agility"},
+  {id:"frog_rocks",name:"Frog Stretch Rocks",family:"Mobility",focus:"Hip Adductors",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility"},
+  {id:"cool_hamstring",name:"Hamstring Stretch",family:"Cooldown",focus:"Hamstrings",difficulty:"Beginner",metric:"seconds",target:30,sets:1,stat:"agility",simple:true}
+];
+exerciseLibrary.push(...SPADE_EXTRA_MOVEMENTS.filter(ex=>!exerciseLibrary.some(e=>e.id===ex.id)));
 
 const TRAINING_PHASE_LIBRARY = {
   upperWarmup:[
@@ -1288,26 +1419,68 @@ function chooseCoreMobility(protocol,state,profile,usedIds){
   }
   return picks.slice(0,profile.core).map(ex=>clonePhaseExercise(scaleForReadiness(ex,state),"Core & Mobility"));
 }
+function spadeTemplateExercise(id,phase,sets,target,readiness){
+  const ex=exerciseLibrary.find(x=>x.id===id)||TRAINING_PHASE_LIBRARY.cooldown.find(x=>x.id===id)||TRAINING_PHASE_LIBRARY.upperWarmup.find(x=>x.id===id)||Object.values(TRAINING_PHASE_LIBRARY).flat().find(x=>x.id===id);
+  if(!ex)return null;
+  const regression={pullup:"passive_hang",dip:"bench_dip",pike_pushup:"pushup",explosive_pushup:"pushup",bag_12_exit:"bag_fixed_punch",bag_slip_combo:"bag_fixed_punch",cossack_squat:"hip_9090",deep_squat_hold:"hip_9090",side_plank:"plank",hollow_hold:"plank",lying_leg_raise:"knee_raise",reverse_crunch:"dead_bug"};
+  let chosen=ex;
+  if(!ex.simple && !["Warm-Up","Cooldown","Mobility"].includes(ex.family) && !isExerciseUnlocked(ex)){
+    chosen=exerciseLibrary.find(x=>x.id===regression[id])||ex;
+  }
+  const item=clonePhaseExercise(scaleForReadiness(chosen,readiness.state),phase);
+  item.sets=readiness.state==="Reduced"&&!["Warm-Up","Cooldown","Mobility"].includes(item.family)?Math.min(sets,2):sets;
+  item.target=readiness.state==="Reduced"&&item.metric==="reps"?Math.max(3,Math.round(target*.8)):target;
+  if(chosen.id!==id)item.notes=`Progression toward ${ex.name}`;
+  return item;
+}
+function spadeStructuredWorkout(day,readiness){
+  const groups=templateForDay(day);
+  if(!groups)return null;
+  const minutes=Number(readiness.time||60);
+  // Shorter sessions retain the order and identity of each training block.
+  const quota=(day===0||day===3)?null:day===4?(minutes<=30?[2,2,2,1,1,2,1,1]:minutes<=45?[3,3,3,2,1,3,2,2]:minutes<=60?[4,3,3,2,2,4,2,2]:minutes<=75?[4,4,3,3,2,5,3,3]:null):(minutes<=30?[3,3,2,2,2,2]:minutes<=45?[4,4,2,3,3,2]:minutes<=60?[4,4,2,2,4,2]:minutes<=75?[5,5,3,2,6,3]:null);
+  const seen=new Set();
+  const exercises=[];
+  groups.forEach(([phase,entries],groupIndex)=>{
+    const cap=quota?(day===1||day===2?Math.max(1,Math.ceil(entries.length*Math.min(1,minutes/90))):quota[Math.min(groupIndex,quota.length-1)]):entries.length;
+    entries.slice(0,cap).forEach(([id,sets,target])=>{
+      const item=spadeTemplateExercise(id,phase,sets,target,readiness);
+      if(!item)return;
+      // Different phases can use a movement for distinct purposes (warm-up vs working sets).
+      // Avoid duplicated working movements from regression substitutions.
+      if(seen.has(item.id)&&!["Warm-Up","Cooldown"].includes(phase)){
+        const original=exerciseLibrary.find(e=>e.id===id);
+        if(original && isExerciseUnlocked(original))return;
+        return;
+      }
+      if(!["Warm-Up","Cooldown"].includes(phase))seen.add(item.id);
+      exercises.push(item);
+    });
+  });
+  return exercises;
+}
 function generateRecommendedWorkout(readiness){
   ensureTraining();
-  const protocol=WEEKLY_TRAINING_PROTOCOL[new Date().getDay()];
-  const state=readinessLabel(readiness);
+  const day=new Date().getDay();
+  const protocol=WEEKLY_TRAINING_PROTOCOL[day];
+  const state=(day===3||day===0)?"Recovery":readinessLabel(readiness);
   const profile=timeProfile(readiness.time);
   let name=protocol.name;
 
   if(state==="Recovery")name="Recovery & Mobility Protocol";
   else if(state==="Reduced")name=`Reduced ${protocol.name}`;
 
-  const warmup=chooseWarmup(protocol,profile);
-  const mobilityPrep=chooseExtendedMobility(protocol,profile);
-  const main=chooseBalancedMain(protocol,state,profile);
+  const structured=spadeStructuredWorkout(day,{...readiness,state});
+  const warmup=structured?[]:chooseWarmup(protocol,profile);
+  const mobilityPrep=structured?[]:chooseExtendedMobility(protocol,profile);
+  const main=structured?[]:chooseBalancedMain(protocol,state,profile);
   const usedIds=new Set(main.map(e=>e.id));
-  const accessory=chooseAccessories(protocol,state,profile,usedIds);
+  const accessory=structured?[]:chooseAccessories(protocol,state,profile,usedIds);
   accessory.forEach(e=>usedIds.add(e.id));
-  const core=chooseCoreMobility(protocol,state,profile,usedIds);
-  const cooldown=chooseCooldown(profile);
+  const core=structured?[]:chooseCoreMobility(protocol,state,profile,usedIds);
+  const cooldown=structured?[]:chooseCooldown(profile);
 
-  const exercises=[...warmup,...mobilityPrep,...main,...accessory,...core,...cooldown];
+  const exercises=structured||[...warmup,...mobilityPrep,...main,...accessory,...core,...cooldown];
   const workout={
     id:uid("tw"),date:todayKey(),name,
     readiness:{...readiness,state},
@@ -1379,7 +1552,7 @@ function targetText(ex){
   return `${ex.sets} × ${ex.target} ${ex.metric}`;
 }
 function phaseOrder(){
-  return ["Warm-Up","Mobility Prep","Main Training","Accessories","Core & Mobility","Cooldown"];
+  return ["Warm-Up","Mobility Prep","Upper Body Strength","Strength Accessories","Athletic Finisher","Calisthenics Control","Pull · V-Taper","Push · Shoulders + Chest","Legs · Bodyweight Control","Skills · Control + Balance","Conditioning","Boxing · Technique","Main Training","Accessories","Inside · Mobility","Inside · Core","Core & Mobility","Cooldown"];
 }
 function renderActiveWorkout(){
   ensureTraining();
@@ -1387,7 +1560,7 @@ function renderActiveWorkout(){
   if(!w){openReadinessCheck();return;}
   const done=w.exercises.reduce((a,e)=>a+e.completedSets.length,0);
   const total=w.exercises.reduce((a,e)=>a+e.sets,0);
-  const sections=phaseOrder().map(phase=>{
+  const sections=[...new Set(w.exercises.map(ex=>ex.phase))].map(phase=>{
     const items=w.exercises.map((ex,i)=>({ex,i})).filter(x=>x.ex.phase===phase);
     if(!items.length)return"";
     return `<section class="training-phase">
@@ -1396,15 +1569,15 @@ function renderActiveWorkout(){
         const complete=ex.completedSets.length>=ex.sets;
         return `<article class="training-exercise ${complete?"exercise-complete":""}">
           <div class="row-between">
-            <div><p class="eyebrow">${esc(ex.family)} · ${esc(ex.difficulty)}</p><h3>${esc(ex.name)}</h3><p class="meta">${esc(ex.focus)} · Target ${targetText(ex)}</p></div>
+            <div><p class="eyebrow">${esc(ex.family)} · ${esc(ex.difficulty)}</p><h3>${esc(ex.name)}</h3><p class="meta">${esc(ex.focus)} · Target ${targetText(ex)}</p>${ex.notes?`<p class="meta">${esc(ex.notes)}</p>`:""}</div>
             <span class="set-count">${ex.completedSets.length}/${ex.sets}</span>
           </div>
           ${ex.completedSets.length?`<div class="logged-sets">${ex.completedSets.map((v,n)=>`<span>${ex.simple?"Done":`Set ${n+1}: ${v}`}</span>`).join("")}</div>`:""}
-          ${complete?`<div class="clear-chip">CLEAR</div>`:ex.simple?
+          ${ex.skipped?`<div class="clear-chip">SKIPPED · NO XP</div>`:complete?`<div class="clear-chip">CLEAR</div>`:ex.simple?
             `<button class="primary-btn simple-complete-btn" data-log-training-simple="${i}">Mark Complete</button>`:
             `<div class="set-entry"><input inputmode="decimal" id="setValue_${i}" placeholder="${ex.target} ${ex.metric}" type="number" min="0" step="0.1"><button class="primary-btn" data-log-training-set="${i}">Log Set</button></div>`
           }
-          <div class="card-actions">${!complete&&!ex.simple&&["Main Training","Accessories","Core & Mobility"].includes(ex.phase)?`<button class="secondary-btn" data-rest-timer="60">60s Rest</button><button class="secondary-btn" data-rest-timer="90">90s Rest</button><button class="secondary-btn" data-substitute-exercise="${i}">Substitute</button>`:""}</div>
+          <div class="card-actions">${!complete&&!ex.skipped&&!ex.simple&&!["Warm-Up","Cooldown"].includes(ex.phase)?`<button class="secondary-btn" data-rest-timer="60">60s Rest</button><button class="secondary-btn" data-rest-timer="90">90s Rest</button><button class="secondary-btn" data-substitute-exercise="${i}">Substitute</button><button class="secondary-btn" data-skip-training="${i}">Skip</button>`:""}</div>
         </article>`;
       }).join("")}</div>
     </section>`;
@@ -1435,11 +1608,29 @@ function logSimpleTrainingItem(index){
 function substituteTrainingExercise(index){
   const w=data.training.activeWorkout;if(!w)return;
   const current=w.exercises[index];if(!current)return;
-  const pool=exerciseLibrary.filter(ex=>ex.family===current.family&&isExerciseUnlocked(ex)&&ex.id!==current.id);
-  if(!pool.length){toast("NO SUITABLE SUBSTITUTE UNLOCKED");return;}
-  const replacement=pool.find(ex=>difficultyIndex(ex.difficulty)<=difficultyIndex(current.difficulty))||pool[0];
-  w.exercises[index]=clonePhaseExercise(scaleForReadiness(replacement,w.readiness.state),current.phase);
+  if(current.completedSets.length){toast("SETS ALREADY LOGGED · FINISH OR KEEP THIS MOVEMENT");return;}
+  const used=new Set(w.exercises.filter((_,i)=>i!==index).map(ex=>ex.id));
+  const tried=new Set(current.substitutionHistory||[]);
+  tried.add(current.id);
+  const focusWords=(current.focus||"").toLowerCase().split(/[^a-z]+/).filter(x=>x.length>3);
+  const pool=exerciseLibrary.filter(ex=>ex.family===current.family&&isExerciseUnlocked(ex)&&!used.has(ex.id)&&!tried.has(ex.id)&&difficultyIndex(ex.difficulty)<=difficultyIndex(current.difficulty));
+  pool.sort((a,b)=>{
+    const similarity=ex=>focusWords.filter(word=>(ex.focus||"").toLowerCase().includes(word)).length;
+    return similarity(b)-similarity(a);
+  });
+  if(!pool.length){toast("NO UNIQUE MATCH · USE SKIP OR KEEP THIS MOVEMENT");return;}
+  const replacement=pool[0];
+  const next=clonePhaseExercise(scaleForReadiness(replacement,w.readiness.state),current.phase);
+  next.sets=Math.min(current.sets,next.sets);
+  next.substitutionHistory=[...tried];
+  w.exercises[index]=next;
   save();renderActiveWorkout();toast(`SUBSTITUTED · ${replacement.name}`);
+}
+
+function skipTrainingExercise(index){
+  const w=data.training.activeWorkout;if(!w)return;
+  const ex=w.exercises[index];if(!ex||ex.completedSets.length)return;
+  ex.skipped=true;save();renderActiveWorkout();toast("MOVEMENT SKIPPED · NO CREDIT AWARDED");
 }
 let restTimerInterval=null;
 function startRestTimer(seconds){
@@ -1531,7 +1722,7 @@ function trainingSummaryHtml(){
       <div class="quick-card"><span class="quick-label">TRAINING TIER</span><strong class="quick-value">${tier}</strong><span class="quick-subtext">${data.training.completedSessions} sessions</span></div>
       <div class="quick-card"><span class="quick-label">TECHNIQUES</span><strong class="quick-value">${unlocked}</strong><span class="quick-subtext">${exerciseLibrary.length} total</span></div>
     </div>
-    <div class="list-card"><p class="eyebrow">TODAY'S BASE PROTOCOL</p><strong>${esc(protocol.name)}</strong><p class="meta">SHADE adjusts this using soreness, energy, available time, and unlocked techniques.</p></div>
+    <div class="list-card"><p class="eyebrow">TODAY'S BASE PROTOCOL</p><strong>${esc(protocol.name)}</strong><p class="meta">Wednesday is rest; Thursday is full-body calisthenics, V-taper + mobility; Friday is upper/full-body strength; Saturday is boxing + conditioning. SHADE scales the session to readiness and time.</p></div>
   </div>`;
 }
 function openModal(title,html,eyebrow="SYSTEM INPUT"){
@@ -1674,12 +1865,12 @@ function renderFitnessModal(){
   ensureTraining();
   const hist=data.body.history.slice(-6).reverse();
   const recent=data.workouts.slice(-6).reverse();
-  const recoveryActive=isRecoveryDay();
+  const recoveryActive=isRecoveryDay()||new Date().getDay()===3;
   openModal("Fitness & Training",`${trainingSummaryHtml()}
     ${recoveryActive?`<div class="list-card recovery-status-card"><div class="row-between"><div><p class="eyebrow">SYSTEM STATUS</p><strong>RECOVERY PROTOCOL ACTIVE</strong></div><span class="tag">REST DAY</span></div><p class="meta">No hard training today. Light mobility or an easy walk is enough. Hydration, protein, and sleep count as the mission.</p></div>`:""}
     <div class="card-actions training-main-actions">
       ${recoveryActive?`<button class="primary-btn" data-go="quests">View Recovery Quest</button>`:`<button class="primary-btn" data-start-training>${data.training.activeWorkout?"Resume Workout":"Start Today's Training"}</button><button class="secondary-btn" data-activate-recovery>Recovery Day</button>`}
-      <button class="secondary-btn" data-add="weight">Log Weight</button><button class="secondary-btn" data-import-performance>Import Previous Workout</button><button class="secondary-btn" data-performance-history>Performance History</button>
+      <button class="secondary-btn" data-edit-weekly>Weekly Templates</button><button class="secondary-btn" data-add="weight">Log Weight</button><button class="secondary-btn" data-import-performance>Import Previous Workout</button><button class="secondary-btn" data-performance-history>Performance History</button>
     </div>
     <div class="panel training-unlocks-panel">
       <div class="row-between"><div><p class="eyebrow">TECHNIQUE PROGRESSION</p><h3>Unlocked Library</h3></div><span class="tag">${trainingTier()}</span></div>
@@ -1769,12 +1960,21 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-generate-dungeon]")){generateDungeon();return;}
   const pd=e.target.closest("[data-progress-dungeon]");if(pd){progressDungeon(pd.dataset.progressDungeon);return;}
   const ps=e.target.closest("[data-practice-skill]");if(ps){openSkillProgress(ps.dataset.practiceSkill);return;}
+  if(e.target.closest("[data-edit-weekly]")){openWeeklyTemplateEditor();return;}
+  const tday=e.target.closest("[data-template-day]");if(tday){openWeeklyTemplateEditor(Number(tday.dataset.templateDay));return;}
+  const tsave=e.target.closest("[data-template-save]");if(tsave){persistTemplate(Number(tsave.dataset.templateSave),readTemplateEditor(Number(tsave.dataset.templateSave)));toast("WEEKLY TEMPLATE SAVED");return;}
+  const tadd=e.target.closest("[data-template-add]");if(tadd){const day=Number(document.querySelector("[data-template-save]").dataset.templateSave),groups=readTemplateEditor(day);groups[Number(tadd.dataset.templateAdd)][1].push(["pushup",2,10]);persistTemplate(day,groups);return;}
+  const trem=e.target.closest("[data-template-remove]");if(trem){const day=Number(document.querySelector("[data-template-save]").dataset.templateSave),groups=readTemplateEditor(day),[gi,ei]=trem.dataset.templateRemove.split("|").map(Number);groups[gi][1].splice(ei,1);persistTemplate(day,groups);return;}
+  const tp=e.target.closest("[data-template-add-phase]");if(tp){const day=Number(document.querySelector("[data-template-save]").dataset.templateSave),groups=readTemplateEditor(day);const phase=prompt("New phase name (e.g. Pull, Core, Mobility):");if(phase?.trim()){groups.push([phase.trim().slice(0,60),[]]);persistTemplate(day,groups);}return;}
+  const trp=e.target.closest("[data-template-remove-phase]");if(trp){const day=Number(document.querySelector("[data-template-save]").dataset.templateSave),groups=readTemplateEditor(day),gi=Number(trp.dataset.templateRemovePhase.split("|")[1]);groups.splice(gi,1);persistTemplate(day,groups);return;}
+  const tres=e.target.closest("[data-template-reset]");if(tres){const day=Number(document.querySelector("[data-template-save]").dataset.templateSave);if(confirm("Restore this day's default template?")){delete weeklyTemplates()[day];save();openWeeklyTemplateEditor(day);}return;}
   if(e.target.closest("[data-start-training]")){ensureTraining();data.training.activeWorkout?renderActiveWorkout():openReadinessCheck();return;}
   if(e.target.closest("[data-activate-recovery]")){activateRecoveryDay();return;}
   if(e.target.closest("[data-import-performance]")){openHistoricalWorkoutImport();return;}
   if(e.target.closest("[data-performance-history]")){renderPerformanceHistory();return;}
   const ls=e.target.closest("[data-log-training-set]");if(ls){logTrainingSet(Number(ls.dataset.logTrainingSet));return;}
   const simple=e.target.closest("[data-log-training-simple]");if(simple){logSimpleTrainingItem(Number(simple.dataset.logTrainingSimple));return;}
+  const skip=e.target.closest("[data-skip-training]");if(skip){skipTrainingExercise(Number(skip.dataset.skipTraining));return;}
   const sub=e.target.closest("[data-substitute-exercise]");if(sub){substituteTrainingExercise(Number(sub.dataset.substituteExercise));return;}
   const rt=e.target.closest("[data-rest-timer]");if(rt){startRestTimer(Number(rt.dataset.restTimer));return;}
   if(e.target.closest("[data-finish-training]")){finishActiveWorkout();return;}
