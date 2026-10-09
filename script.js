@@ -336,15 +336,26 @@ function addStat(stat,n){
   while(s.xp>=statRequired(s.level)){s.xp-=statRequired(s.level);s.level++;toast(`${stat.toUpperCase()} · LEVEL ${s.level}`);}
 }
 function companionBond(n){data.companion.bond=Math.max(0,data.companion.bond+n);checkCompanionStage();}
-function checkCompanionStage(){
+const SHADE_STAGES=["Dormant","Awakened","Developed","Ascended","Elite","Mythic"];
+function shadeEligibleStage(){
   const l=data.player.level,b=data.companion.bond,m=Object.values(data.skills).filter(s=>s.state==="Mastered").length;
-  let stage="Dormant";
-  if(l>=75&&b>=20&&m>=20)stage="Mythic";
-  else if(l>=50&&b>=15&&m>=15)stage="Elite";
-  else if(l>=30&&b>=10&&m>=10)stage="Ascended";
-  else if(l>=15&&b>=5&&m>=5)stage="Developed";
-  else if(l>=5&&b>=2&&m>=1)stage="Awakened";
-  data.companion.stage=stage;
+  if(l>=75&&b>=20&&m>=20)return "Mythic";
+  if(l>=50&&b>=15&&m>=15)return "Elite";
+  if(l>=30&&b>=10&&m>=10)return "Ascended";
+  if(l>=15&&b>=5&&m>=5)return "Developed";
+  if(l>=5&&b>=2&&m>=1)return "Awakened";
+  return "Dormant";
+}
+function checkCompanionStage(){
+  data.companion.stage=data.companion.stage||"Dormant";
+  const eligible=shadeEligibleStage();
+  data.companion.pendingEvolution=SHADE_STAGES.indexOf(eligible)>SHADE_STAGES.indexOf(data.companion.stage)?eligible:null;
+}
+function awakenShade(){
+  checkCompanionStage();const next=data.companion.pendingEvolution;if(!next)return;
+  data.companion.stage=next;data.companion.pendingEvolution=null;
+  data.timeline.unshift({date:todayKey(),text:`SHADE EVOLUTION · ${next}`});
+  save();renderAll();renderShadeTab("evolution");toast(`SHADE HAS EVOLVED · ${next.toUpperCase()}`);
 }
 
 function getShadeProfile(stage){
@@ -542,9 +553,9 @@ function renderUnlocks(){
   const lvl=data.player.level;
   const list=[
     ["Boss Battles",data.bosses.length>0||lvl>=3,lvl>=3?"Unlocked":"Reach Level 3"],
-    ["Dungeons",lvl>=5,lvl>=5?"Unlocked":"Reach Level 5"],
+    ["Dungeons",lvl>=5,lvl>=5?"Gate available · Enter via Quests":"Reach Level 5"],
     ["Rank Trial",lvl>=10,lvl>=10?"Available":"Reach Level 10"],
-    ["Companion Evolution",data.companion.stage!=="Dormant",data.companion.stage!=="Dormant"?data.companion.stage:"Requirements hidden"]
+    ["Companion Evolution",data.companion.stage!=="Dormant",data.companion.pendingEvolution?"Evolution ready · SHADE tab":data.companion.stage!=="Dormant"?`${data.companion.stage} · SHADE tab`:"Requirements pending"]
   ];
   document.getElementById("unlockGrid").innerHTML=list.map(([n,u,t])=>`<div class="unlock-card ${u?"":"locked"}"><div><p class="eyebrow">SYSTEM FEATURE</p><strong>${n}</strong></div><span class="locked-badge">${u?"✓":"🔒"} ${t}</span></div>`).join("");
 }
@@ -708,8 +719,10 @@ function renderQuestTab(tab="daily"){
     </div>`;
   } else if(tab==="dungeons"){
     const unlocked=data.player.level>=5;
-    el.innerHTML=!unlocked?`<div class="list-card"><strong>Dungeons Locked</strong><p class="meta">Reach Level 5.</p></div>`:
-    `<div class="list-stack">${data.dungeons.length?data.dungeons.map(d=>`<article class="list-card"><div class="row-between"><strong>${esc(d.name)}</strong><span>${d.progress}/${d.target}</span></div><p class="meta">${esc(d.description||"")}</p><div class="mini-progress"><div class="mini-progress-fill" style="width:${d.progress/d.target*100}%"></div></div><div class="card-actions"><button class="primary-btn" data-progress-dungeon="${d.id}">Clear Room</button></div></article>`).join(""):`<div class="list-card"><strong>No active dungeons.</strong><p class="meta">The first dungeon can be generated once you are Level 5.</p><button class="primary-btn" style="margin-top:10px" data-generate-dungeon>Generate Dungeon</button></div>`}</div>`;
+    const active=data.dungeons.filter(d=>!d.cleared && d.progress<d.target);
+    const cleared=data.dungeons.filter(d=>d.cleared||d.progress>=d.target);
+    el.innerHTML=!unlocked?`<div class="list-card"><strong>Dungeons Locked</strong><p class="meta">Reach Level 5 to enter your first trial.</p></div>`:
+    `<div class="list-stack">${active.length?active.map(dungeonCard).join(""):`<div class="list-card"><strong>Dungeon Gate Available</strong><p class="meta">Enter a five-room challenge. Rooms open only after completing real quests and skill sessions.</p><button class="primary-btn" style="margin-top:10px" data-generate-dungeon>Enter Dungeon</button></div>`}${cleared.length?`<div class="list-card"><p class="eyebrow">CLEARED DUNGEONS</p>${cleared.slice(-5).map(d=>`<p class="meta">✓ ${esc(d.name)}</p>`).join("")}</div>`:""}</div>`;
   } else {
     el.innerHTML=`<div class="list-stack">${data.questHistory.length?data.questHistory.slice(0,50).map(q=>`<article class="list-card"><strong>${esc(q.title)}</strong><p class="meta">${esc(q.type)} · ${esc(q.date)} · +${q.xp} XP</p></article>`).join(""):`<div class="list-card">No completed quests yet.</div>`}</div>`;
   }
@@ -903,14 +916,38 @@ function damageBoss(id){
   if(b.hp===0){b.rewardXP=b.rewardXP||100;b.rewardCoins=b.rewardCoins||20;defeatBoss(b);}
   save();renderQuestTab("bosses");renderAll();
 }
+const DUNGEON_ROOMS=[
+  {name:"The First Gate",desc:"Complete 2 real quests after entering.",kind:"quests",target:2},
+  {name:"Hall of Discipline",desc:"Complete 2 additional real quests.",kind:"quests",target:2},
+  {name:"Chamber of Practice",desc:"Record 2 genuine skill practice sessions.",kind:"practice",target:2},
+  {name:"The Long Corridor",desc:"Complete 1 more real quest.",kind:"quests",target:1},
+  {name:"The Final Seal",desc:"Record 1 more skill practice session.",kind:"practice",target:1}
+];
+function dungeonEvidence(kind){
+  if(kind==="quests")return data.questHistory.filter(q=>q.date && q.type!=="Dungeon").length;
+  return Object.values(data.skills).reduce((sum,sk)=>sum+Number(sk.practice||0),0);
+}
+function dungeonCard(d){
+  const rooms=d.rooms||[];const room=rooms[d.progress||0];
+  if(d.cleared)return `<article class="list-card"><strong>✓ ${esc(d.name)}</strong><p class="meta">Dungeon cleared · Trophy secured</p></article>`;
+  if(!room)return `<article class="list-card"><strong>${esc(d.name)}</strong><p class="meta">Legacy dungeon. Continue using the original room controls.</p><button class="secondary-btn" data-progress-dungeon="${d.id}">Clear Room (Legacy)</button></article>`;
+  const count=Math.max(0,dungeonEvidence(room.kind)-room.start);
+  return `<article class="list-card"><p class="eyebrow">ACTIVE DUNGEON · ROOM ${d.progress+1}/${rooms.length}</p><h3>${esc(d.name)}</h3><p class="meta">${esc(d.description||"")}</p><div class="mini-progress"><div class="mini-progress-fill" style="width:${d.progress/rooms.length*100}%"></div></div><div class="panel" style="margin-top:14px"><strong>${esc(room.name)}</strong><p class="meta">${esc(room.desc)}</p><p class="meta">Evidence: ${Math.min(count,room.target)}/${room.target}</p><button class="primary-btn" data-progress-dungeon="${d.id}" ${count<room.target?"disabled":""}>${count>=room.target?"Seal Room":"Requirement Incomplete"}</button></div></article>`;
+}
 function generateDungeon(){
-  data.dungeons.push({id:uid("dng"),name:"Iron Trial I",description:"A 5-room physical consistency dungeon.",progress:0,target:5,xp:150,coins:15});save();renderQuestTab("dungeons");
+  if(data.player.level<5){toast("LEVEL 5 REQUIRED");return;}
+  if(data.dungeons.some(d=>!d.cleared && (!d.target||d.progress<d.target))){toast("FINISH YOUR ACTIVE DUNGEON FIRST");return;}
+  const rooms=DUNGEON_ROOMS.map(r=>({...r,start:0}));rooms[0].start=dungeonEvidence(rooms[0].kind);
+  data.dungeons.push({id:uid("dng"),name:"Iron Trial I",description:"Five rooms. Every seal requires verified real-life progress logged in SPADE SYSTEM.",progress:0,target:rooms.length,rooms,xp:150,coins:15,cleared:false});save();renderQuestTab("dungeons");
 }
 function progressDungeon(id){
-  const d=data.dungeons.find(x=>x.id===id);if(!d||d.progress>=d.target)return;
+  const d=data.dungeons.find(x=>x.id===id);if(!d||d.cleared)return;
+  if(d.rooms){const room=d.rooms[d.progress];if(!room||dungeonEvidence(room.kind)-room.start<room.target){toast("ROOM REQUIREMENT NOT MET");return;}}
+  if(d.progress>=d.target)return;
   d.progress++;
-  if(d.progress>=d.target){data.legacy.dungeons++;addXP(d.xp);addCoins(d.coins);companionBond(8);data.timeline.unshift({date:todayKey(),text:`Dungeon cleared: ${d.name}`});toast(`DUNGEON CLEAR · +${d.xp} XP · ◈${d.coins}`);}
-  save();renderQuestTab("dungeons");renderAll();
+  if(d.rooms&&d.progress<d.target)d.rooms[d.progress].start=dungeonEvidence(d.rooms[d.progress].kind);
+  if(d.progress>=d.target){d.cleared=true;data.legacy.dungeons++;addXP(d.xp);addCoins(d.coins);companionBond(8);data.inventory.trophies.push(`${d.name} · ${todayKey()}`);data.timeline.unshift({date:todayKey(),text:`Dungeon cleared: ${d.name}`});toast(`DUNGEON CLEAR · +${d.xp} XP · ◈${d.coins}`);}
+  save();renderAll();renderQuestTab("dungeons");
 }
 
 function renderSkills(){
@@ -1044,7 +1081,7 @@ function renderShadeTab(tab="overview"){
       ["Elite","Level 50 · Bond 15 · 15 mastered skills",data.player.level>=50&&data.companion.bond>=15&&mastered>=15],
       ["Mythic","Level 75 · Bond 20 · 20 mastered skills",data.player.level>=75&&data.companion.bond>=20&&mastered>=20]
     ];
-    el.innerHTML=`<div class="list-stack">${reqs.map(([n,r,ok])=>`<div class="list-card"><div class="row-between"><strong>${n}</strong><span>${ok?"✓":"🔒"}</span></div><p class="meta">${r}</p></div>`).join("")}</div>`;
+    checkCompanionStage();el.innerHTML=`${data.companion.pendingEvolution?`<div class="panel evolution-ceremony"><p class="eyebrow">EVOLUTION TRIAL COMPLETE</p><h3>SHADE · ${esc(data.companion.pendingEvolution)}</h3><p class="meta">The requirements are fulfilled. Confirm the transformation to unlock the next form.</p><button class="primary-btn" data-awaken-shade>Begin Evolution</button></div>`:`<div class="panel"><strong>Current form: ${esc(data.companion.stage)}</strong><p class="meta">Meet the next requirements to awaken a new form.</p></div>`}<div class="list-stack">${reqs.map(([n,r,ok])=>`<div class="list-card"><div class="row-between"><strong>${n}</strong><span>${ok?"✓":"🔒"}</span></div><p class="meta">${r}</p></div>`).join("")}</div>`;
   } else if(tab==="cosmetics"){
     el.innerHTML=`<div class="list-stack">${data.companion.cosmetics.map(c=>`<div class="list-card"><div class="row-between"><strong>${esc(c)}</strong><span>${data.companion.equipped.includes(c)?"Equipped":"Owned"}</span></div></div>`).join("")}</div>`;
   } else if(tab==="room"){
@@ -1728,6 +1765,7 @@ document.addEventListener("click",e=>{
   const db=e.target.closest("[data-damage-boss]");if(db){damageBoss(db.dataset.damageBoss);return;}
   const cbr=e.target.closest("[data-claim-boss-req]");if(cbr){const [bossId,reqId]=cbr.dataset.claimBossReq.split("|");claimBossRequirement(bossId,reqId);return;}
   if(e.target.closest("[data-force-boss-scan]")){const b=spawnSystemBoss(true);save();renderQuestTab("bosses");renderAll();toast(b?`BOSS DETECTED · ${b.name}`:"NO BOSS AVAILABLE");return;}
+  if(e.target.closest("[data-awaken-shade]")){awakenShade();return;}
   if(e.target.closest("[data-generate-dungeon]")){generateDungeon();return;}
   const pd=e.target.closest("[data-progress-dungeon]");if(pd){progressDungeon(pd.dataset.progressDungeon);return;}
   const ps=e.target.closest("[data-practice-skill]");if(ps){openSkillProgress(ps.dataset.practiceSkill);return;}
