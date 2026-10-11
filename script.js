@@ -244,6 +244,19 @@ const SPADE_WEEKLY_DEFAULTS = {
   3:[["Recovery",[["cat_cow",1,8],["hip_9090",1,10],["shoulder_cars",1,5],["cool_breath",1,5]]]]
 };
 Object.assign(SPADE_STRUCTURED_DAYS,SPADE_WEEKLY_DEFAULTS);
+
+// V1.8: time-efficient, full-body and career-friendly defaults. Custom templates win.
+const SPADE_EFFICIENT_TEMPLATES={
+  0:[["Optional Recovery",[["cat_cow",1,8],["hip_9090",1,10],["cool_breath",1,5]]]],
+  1:[["Warm-Up",[["warm_easy_cardio",1,180],["warm_arm_circles",1,10]]],["Pull · V-Taper",[["pullup",3,5],["db_chest_supported_row",3,10]]],["Push · Shoulders + Chest",[["dumbbell_bench_press",3,10],["db_overhead_press",2,10]]],["Inside · Core",[["bench_garhammer",3,10],["side_plank",2,25]]],["Inside · Mobility",[["shoulder_cars",1,5],["thoracic_rotations",1,6],["hip_9090",1,10]]],["Cooldown",[["cool_lat",1,30],["cool_breath",1,5]]]],
+  2:[["Warm-Up",[["warm_easy_cardio",1,180],["warm_leg_swings",1,10]]],["Lower Body Strength",[["goblet_squat",3,10],["db_rdl",3,10],["bulgarian_split_squat",2,8],["calf_raise",2,15]]],["Inside · Core",[["dead_bug",2,8],["side_plank",2,25]]],["Inside · Mobility",[["hip_9090",1,10],["ankle_rocks",1,10]]],["Cooldown",[["cool_hamstring",1,30],["cool_breath",1,5]]]],
+  3:[["Recovery",[["cat_cow",1,8],["shoulder_cars",1,5],["hip_9090",1,10],["cool_breath",1,5]]]],
+  4:[["Warm-Up",[["warm_easy_cardio",1,180],["warm_scapular_pullup",1,8],["warm_arm_circles",1,10]]],["Pull · V-Taper",[["pullup",3,5],["db_chest_supported_row",2,10]]],["Push · Shoulders + Chest",[["pushup",3,10],["pike_pushup",2,8]]],["Legs · Bodyweight Control",[["squat",2,12],["reverse_lunge",2,8]]],["Skills · Control + Balance",[["passive_hang",2,20]]],["Inside · Core",[["knee_raise",3,8],["hollow_hold",2,20]]],["Inside · Mobility",[["shoulder_cars",1,5],["thoracic_rotations",1,6],["hip_cars",1,5],["hip_9090",1,10],["frog_rocks",1,10]]],["Cooldown",[["cool_lat",1,30],["cool_hip",1,30]]]],
+  5:[["Warm-Up",[["warm_easy_cardio",1,180],["warm_arm_circles",1,10]]],["Upper Body Strength",[["dumbbell_bench_press",3,10],["db_chest_supported_row",2,10],["db_overhead_press",2,8]]],["Strength Accessories",[["db_rdl",2,10],["goblet_squat",2,10]]],["Inside · Core",[["bench_reverse_crunch",3,12],["side_plank",2,25]]],["Inside · Mobility",[["cat_cow",1,8],["hip_9090",1,10]]],["Cooldown",[["cool_chest",1,30],["cool_breath",1,5]]]],
+  6:[["Warm-Up",[["warm_easy_cardio",1,180],["warm_arm_circles",1,10]]],["Boxing · Technique",[["bag_jab",2,45],["bag_open_round",3,60]]],["Conditioning",[["jumping_jacks",2,45]]],["Inside · Mobility",[["shoulder_cars",1,5],["hip_9090",1,10]]],["Cooldown",[["cool_shoulder",1,30],["cool_breath",1,5]]]]
+};
+Object.assign(SPADE_STRUCTURED_DAYS,SPADE_EFFICIENT_TEMPLATES);
+const SPADE_TRAINING_MINUTES={0:10,1:45,2:40,3:10,4:50,5:40,6:30};
 const SPADE_WEEKDAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 function weeklyTemplates(){
   ensureTraining();
@@ -265,7 +278,7 @@ function openWeeklyTemplateEditor(day=new Date().getDay()){
   const catalog=templateCatalog();
   const options=catalog.map(e=>`<option value="${esc(e.id)}">${esc(e.name)} · ${esc(e.family)}${isExerciseUnlocked(e)?"":" (locked)"}</option>`).join("");
   openModal("Weekly Training Templates",`
-    <p class="meta">Edit your plan without changing completed workout history. Changes apply to newly generated sessions, not the workout already in progress.</p>
+    <p class="meta">Edit your plan without changing completed workout history. V1.8 defaults are shorter; saved custom templates remain yours. Changes apply to newly generated sessions, not the workout already in progress.</p>
     <div class="card-actions">${SPADE_WEEKDAYS.map((name,i)=>`<button class="${i===day?"primary-btn":"secondary-btn"}" data-template-day="${i}">${name.slice(0,3)}</button>`).join("")}</div>
     <div class="list-card"><strong>${SPADE_WEEKDAYS[day]} · ${esc(WEEKLY_TRAINING_PROTOCOL[day].name)}</strong><p class="meta">${day===3?"Rest day: optional easy recovery only.":day===0?"Optional recovery only.":"Training order follows the phases below."}</p></div>
     <div class="list-stack">${groups.map(([phase,entries],gi)=>`
@@ -319,6 +332,12 @@ const SPADE_EXTRA_MOVEMENTS = [
   {id:"frog_rocks",name:"Frog Stretch Rocks",family:"Mobility",focus:"Hip Adductors",difficulty:"Beginner",metric:"reps",target:10,sets:1,stat:"agility"},
   {id:"cool_hamstring",name:"Hamstring Stretch",family:"Cooldown",focus:"Hamstrings",difficulty:"Beginner",metric:"seconds",target:30,sets:1,stat:"agility",simple:true}
 ];
+
+const SPADE_BENCH_CORE=[
+ {id:"bench_garhammer",name:"Flat-Bench Garhammer Raise",family:"Core",focus:"Abdominal Pelvic Curl",difficulty:"Beginner",metric:"reps",target:10,sets:3,stat:"strength",notes:"Hold bench securely; curl hips upward without swinging."},
+ {id:"bench_reverse_crunch",name:"Flat-Bench Reverse Crunch",family:"Core",focus:"Abdominals / Pelvic Control",difficulty:"Beginner",metric:"reps",target:12,sets:3,stat:"strength",notes:"Bend knees and roll pelvis upward; lower slowly."}
+];
+exerciseLibrary.push(...SPADE_BENCH_CORE.filter(ex=>!exerciseLibrary.some(e=>e.id===ex.id)));
 exerciseLibrary.push(...SPADE_EXTRA_MOVEMENTS.filter(ex=>!exerciseLibrary.some(e=>e.id===ex.id)));
 
 const TRAINING_PHASE_LIBRARY = {
@@ -631,21 +650,26 @@ function plannedQuestsForDay(date=todayKey()){
 function replanToday(){
   if(data.daily.date!==todayKey())return;
   const old=data.daily.quests||[];
-  if(old.some(q=>q.completed)){toast("EXISTING QUEST PROGRESS PRESERVED");return;}
-  data.daily.quests=plannedQuestsForDay();
+  const planned=plannedQuestsForDay();
+  const completed=old.filter(q=>q.completed);
+  const doneIds=new Set(completed.map(q=>q.id));
+  data.daily.quests=[...completed,...planned.filter(q=>!doneIds.has(q.id))];
+  // Existing daily-clear rewards remain awarded only once.
   save();renderAll();toast("QUESTS ADAPTED TO CALENDAR");
 }
 function renderAdaptivePlanner(){
   const p=dayInfo(),el=document.getElementById("adaptivePlanner");if(!el)return;
   const mode=p.busy?"CAREER / BUSY DAY":p.weekday===3||p.weekday===0?"RECOVERY DAY":"FOCUSED PROGRESSION";
   const tip=p.busy?"Your calendar takes priority. Complete event work, keep fitness flexible, and log meaningful accomplishments afterward.":p.weekday===3||p.weekday===0?"Rest is part of the program. Mobility is optional; music and life goals can still progress.":"Train efficiently, then spend your remaining time building your music and life goals.";
-  el.innerHTML=`<div class="list-card"><p class="eyebrow">SHADE · ADAPTIVE DAY PLAN</p><strong>${mode}</strong><p class="meta">${tip}</p><p class="meta">${p.classes.length} class(es) · ${p.events.length} calendar event(s) · ${data.daily.quests.length} quests</p><div class="card-actions"><button class="secondary-btn" data-quick-capture>Quick Life Log</button><button class="secondary-btn" data-replan-day>Refresh Plan</button><button class="secondary-btn" data-add="event">+ Calendar Event</button></div></div>`;
+  el.innerHTML=`<div class="list-card"><p class="eyebrow">SHADE · ADAPTIVE DAY PLAN</p><strong>${mode}</strong><p class="meta">${tip}</p><p class="meta">${p.classes.length} class(es) · ${p.events.length} calendar event(s) · ${data.daily.quests.length} quests · ${(data.lifeLogs||[]).filter(x=>x.date===todayKey()).length} life logs</p><div class="card-actions"><button class="secondary-btn" data-quick-capture>Quick Life Log</button><button class="secondary-btn" data-life-history>Life History</button><button class="secondary-btn" data-replan-day>Refresh Plan</button><button class="secondary-btn" data-add="event">+ Calendar Event</button></div></div>`;
+}
+function openLifeHistory(){
+ const logs=(data.lifeLogs||[]).slice(0,40);
+ openModal("Life Progress History",logs.length?`<p class="meta">These are real accomplishments you recorded. They do not automatically complete workouts or nutrition logs.</p><div class="list-stack">${logs.map(x=>`<div class="list-card"><strong>${esc(x.category)} · ${esc(x.date)}</strong><p class="meta">${esc(x.notes)}</p><p class="meta">${x.rewarded?"One-time daily category credit":"No duplicate XP"}</p></div>`).join("")}</div>`:`<div class="list-card"><p class="meta">No life logs yet. Your first real-world accomplishment can go here.</p></div>`,"CAREER · LIFE · SKILLS");
 }
 function openQuickCapture(){
-  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
-  const prev=`${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,"0")}-${String(yesterday.getDate()).padStart(2,"0")}`;
-  openModal("Quick Life Log",`<p class="meta">Log meaningful work in under a minute, including yesterday's achievements. No invented calories, no automatic workout credit, and no penalties for unlogged days.</p>
-    <form id="quickCaptureForm"><div class="form-grid"><div class="field"><label>Date</label><input name="date" type="date" value="${prev}" max="${todayKey()}" required></div><div class="field"><label>Area</label><select name="category"><option>Music</option><option>Live Sound</option><option>Career</option><option>Networking</option><option>School</option><option>Fitness</option><option>Life</option><option>Recovery</option></select></div></div>
+  openModal("Quick Life Log",`<p class="meta">Log meaningful work in under a minute, including yesterday's achievements. No invented calories, no automatic workout credit, and no penalties for unlogged days. Select yesterday or another past date if you are catching up.</p>
+    <form id="quickCaptureForm"><div class="form-grid"><div class="field"><label>Date</label><input name="date" type="date" value="${todayKey()}" max="${todayKey()}" required></div><div class="field"><label>Area</label><select name="category"><option>Music</option><option>Live Sound</option><option>Career</option><option>Networking</option><option>School</option><option>Fitness</option><option>Life</option><option>Recovery</option></select></div></div>
     <div class="field"><label>What did you actually do?</label><textarea name="notes" maxlength="700" required placeholder="Mixed live sound on SQ-7, handled setup and breakdown, met bands and venue leadership..."></textarea></div>
     <div class="field"><label>Effort</label><select name="effort"><option value="1">Small step</option><option value="2" selected>Meaningful session</option><option value="3">Major milestone</option></select></div>
     <button class="primary-btn" type="submit">Record Real-Life Progress</button></form>`,'LIFE RPG · HONEST PROGRESS');
@@ -660,7 +684,7 @@ function logLifeCapture(form){
   const alreadyRewarded=data.lifeLogs.slice(1).some(x=>x.date===date&&x.category===category&&x.rewarded);
   const xp=alreadyRewarded?0:[0,8,16,25][effort];log.rewarded=xp>0;addXP(xp);
   const stat=/music|live sound/i.test(category)?'creativity':/career|network/i.test(category)?'charisma':/school/i.test(category)?'intellect':/fitness/i.test(category)?'strength':'discipline';
-  addStat(stat,Math.round(xp*.45));
+  if(xp)addStat(stat,Math.round(xp*.45));
   data.timeline.unshift({date,text:`${category}: ${notes.slice(0,110)}`});
   data.questHistory.unshift({date,title:`Real-life milestone: ${category}`,type:'Life Log',xp});
   save();closeModal();renderAll();toast(`REAL PROGRESS LOGGED · +${xp} XP`);
@@ -1484,11 +1508,13 @@ function spadeTemplateExercise(id,phase,sets,target,readiness){
   const regression={pullup:"passive_hang",dip:"bench_dip",pike_pushup:"pushup",explosive_pushup:"pushup",bag_12_exit:"bag_fixed_punch",bag_slip_combo:"bag_fixed_punch",cossack_squat:"hip_9090",deep_squat_hold:"hip_9090",side_plank:"plank",hollow_hold:"plank",lying_leg_raise:"knee_raise",reverse_crunch:"dead_bug"};
   let chosen=ex;
   if(!ex.simple && !["Warm-Up","Cooldown","Mobility"].includes(ex.family) && !isExerciseUnlocked(ex)){
-    chosen=exerciseLibrary.find(x=>x.id===regression[id])||ex;
+    chosen=exerciseLibrary.find(x=>x.id===regression[id]&&isExerciseUnlocked(x))||exerciseLibrary.find(x=>x.family===ex.family&&x.difficulty==="Beginner"&&x.id!==id)||null;
   }
+  if(!chosen)return null;
   const item=clonePhaseExercise(scaleForReadiness(chosen,readiness.state),phase);
   item.sets=readiness.state==="Reduced"&&!["Warm-Up","Cooldown","Mobility"].includes(item.family)?Math.min(sets,2):sets;
   item.target=readiness.state==="Reduced"&&item.metric==="reps"?Math.max(3,Math.round(target*.8)):target;
+  if(chosen.notes&&!item.notes)item.notes=chosen.notes;
   if(chosen.id!==id)item.notes=`Progression toward ${ex.name}`;
   return item;
 }
@@ -1497,11 +1523,13 @@ function spadeStructuredWorkout(day,readiness){
   if(!groups)return null;
   const minutes=Number(readiness.time||60);
   // Shorter sessions retain the order and identity of each training block.
-  const quota=(day===0||day===3)?null:day===4?(minutes<=30?[2,2,2,1,1,2,1,1]:minutes<=45?[3,3,3,2,1,3,2,2]:minutes<=60?[4,3,3,2,2,4,2,2]:minutes<=75?[4,4,3,3,2,5,3,3]:null):(minutes<=30?[3,3,2,2,2,2]:minutes<=45?[4,4,2,3,3,2]:minutes<=60?[4,4,2,2,4,2]:minutes<=75?[5,5,3,2,6,3]:null);
+  // Preserve all blocks. Only trim uncustomized sessions on shorter days.
+  const customized=Array.isArray(weeklyTemplates()[day]);
+  const ratio=(customized||day===0||day===3)?1:Math.min(1,Math.max(.38,minutes/(SPADE_TRAINING_MINUTES[day]||45)));
   const seen=new Set();
   const exercises=[];
   groups.forEach(([phase,entries],groupIndex)=>{
-    const cap=quota?(day===1||day===2?Math.max(1,Math.ceil(entries.length*Math.min(1,minutes/90))):quota[Math.min(groupIndex,quota.length-1)]):entries.length;
+    const cap=customized?entries.length:Math.max(1,Math.min(entries.length,Math.ceil(entries.length*ratio)));
     entries.slice(0,cap).forEach(([id,sets,target])=>{
       const item=spadeTemplateExercise(id,phase,sets,target,readiness);
       if(!item)return;
@@ -1602,7 +1630,7 @@ function openReadinessCheck(){
         <option value="0">0 · Fresh</option><option value="1" selected>1 · Mild</option><option value="2">2 · Noticeable</option><option value="3">3 · Very Sore</option>
       </select></div>
     </div>
-    <div class="field"><label>Time Available</label><select name="time"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option><option value="75">75 min</option><option value="90">90 min</option></select></div>
+    <div class="field"><label>Time Available</label><select name="time">${[15,20,30,40,45,50,60,75,90].map(n=>`<option value="${n}" ${n===(dayInfo().busy?20:SPADE_TRAINING_MINUTES[new Date().getDay()]||45)?"selected":""}>${n} min</option>`).join("")}</select></div>
     <button class="primary-btn" type="submit">Generate Today's Training</button>
   </form>`,"TRAINING ENGINE");
 }
@@ -1982,7 +2010,7 @@ function handleForms(e){
   if(e.target.id==="questForm"){e.preventDefault();const f=new FormData(e.target);data.customQuests.unshift({id:uid("q"),name:f.get("name"),category:f.get("category"),type:f.get("type"),difficulty:f.get("difficulty"),stat:f.get("stat"),date:f.get("date"),notes:f.get("notes"),completed:false});save();closeModal();renderQuestTab("custom");toast("QUEST ADDED");}
   if(e.target.id==="eventForm"){e.preventDefault();const f=new FormData(e.target);data.calendarEvents.push({id:uid("e"),name:f.get("name"),date:f.get("date"),time:f.get("time"),category:f.get("category"),notes:f.get("notes")});save();closeModal();if(f.get("date")===todayKey())replanToday();renderAll();toast("EVENT ADDED");}
   if(e.target.id==="workoutForm"){e.preventDefault();const f=new FormData(e.target);const mins=Number(f.get("minutes")||30);data.workouts.push({id:uid("w"),name:f.get("name"),minutes:mins,difficulty:f.get("difficulty"),notes:f.get("notes"),date:todayKey()});data.legacy.workouts++;addXP(f.get("difficulty")==="Hard"?40:25);addStat("strength",15);addStat("endurance",10);addStat("discipline",5);progressWeekly("Consistency Protocol");save();closeModal();renderAll();toast("WORKOUT LOGGED");}
-  if(e.target.id==="mealForm"){e.preventDefault();const f=new FormData(e.target),p=Number(f.get("protein")||0);data.nutrition.meals.push({name:f.get("name"),protein:p,calories:Number(f.get("calories")||0)});data.nutrition.protein+=p;addStat("discipline",2);save();closeModal();renderAll();toast("MEAL LOGGED");}
+  if(e.target.id==="mealForm"){e.preventDefault();const f=new FormData(e.target),p=Number(f.get("protein")||0);data.nutrition.meals.push({name:f.get("name"),protein:p,calories:f.get("calories")===""?null:Number(f.get("calories"))});data.nutrition.protein+=p;addStat("discipline",2);save();closeModal();renderAll();toast("MEAL LOGGED");}
   if(e.target.id==="weightForm"){e.preventDefault();const f=new FormData(e.target),w=Number(f.get("weight"));data.body.weight=w;data.body.history.push({date:todayKey(),weight:w});save();closeModal();renderAll();toast("WEIGHT UPDATED");}
   if(e.target.id==="moneyForm"){e.preventDefault();const f=new FormData(e.target),kind=e.target.dataset.kind,amount=Number(f.get("amount")),acc=data.finance.accounts.find(a=>a.id===f.get("account"));if(acc)acc.balance+=kind==="income"?amount:-amount;data.finance.transactions.push({id:uid("tx"),name:f.get("name"),amount,type:kind,date:todayKey(),skillIncome:!!f.get("skillIncome")});if(kind==="income"&&f.get("skillIncome")){data.legacy.skillIncome+=amount;}save();closeModal();renderAll();toast(kind==="income"?"INCOME LOGGED":"EXPENSE LOGGED");}
   if(e.target.id==="goalForm"){e.preventDefault();const f=new FormData(e.target);data.goals.push({id:uid("g"),name:f.get("name"),type:f.get("type"),current:0,target:Number(f.get("target")||0),status:"Active"});save();closeModal();renderJourneyTab("goals");toast("GOAL ADDED");}
@@ -2021,6 +2049,7 @@ document.addEventListener("click",e=>{
   const pd=e.target.closest("[data-progress-dungeon]");if(pd){progressDungeon(pd.dataset.progressDungeon);return;}
   const ps=e.target.closest("[data-practice-skill]");if(ps){openSkillProgress(ps.dataset.practiceSkill);return;}
   if(e.target.closest("[data-quick-capture]")){openQuickCapture();return;}
+  if(e.target.closest("[data-life-history]")){openLifeHistory();return;}
   if(e.target.closest("[data-replan-day]")){replanToday();return;}
   const evdel=e.target.closest("[data-remove-event]");if(evdel){if(confirm("Remove this calendar event?")){data.calendarEvents=data.calendarEvents.filter(x=>x.id!==evdel.dataset.removeEvent);save();replanToday();renderCalendarModal();renderAll();}return;}
   if(e.target.closest("[data-edit-weekly]")){openWeeklyTemplateEditor();return;}
