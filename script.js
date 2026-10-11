@@ -592,26 +592,85 @@ function initSkills(){
     });
   });
 }
+// V1.7: local calendar-aware quest planning. No external calendar connection.
+const LIFE_EVENT_TYPES=["Music","Gig","Production","Networking","School","Business","Fitness","Personal","Recovery"];
+function dayInfo(date=todayKey()){
+  const [y,m,d]=date.split('-').map(Number),weekday=new Date(y,m-1,d).getDay();
+  const classes=(schedule[weekday]||[]).filter(x=>!x.startsOn||date>=x.startsOn);
+  const events=(data.calendarEvents||[]).filter(e=>e.date===date);
+  const demanding=events.filter(e=>/gig|production|music|network|business|event|work|performance/i.test(`${e.category} ${e.name}`));
+  const busy=demanding.length>0||events.length>=2||classes.length>=3;
+  return {date,weekday,classes,events,demanding,busy};
+}
+function plannedQuestsForDay(date=todayKey()){
+  const p=dayInfo(date),id=x=>`${date}_adaptive_${x}`;
+  const quest=(key,title,description,stats,xp=15)=>({id:id(key),title,description,difficulty:"Normal",xp,coins:1,stats,completed:false});
+  const quests=[];
+  const physical=p.weekday===3||p.weekday===0;
+  if(p.classes.length)quests.push(quest("class","Show Up for Class",`Attend your scheduled class${p.classes.length>1?"es":""} or complete the required class work.`,{intellect:10,discipline:6},20));
+  if(p.demanding.length){
+    const ev=p.demanding[0];
+    quests.push(quest("career",`Career Mission: ${ev.name}`,`Complete meaningful work at this event. Log actual tasks and contacts afterward.`,{creativity:10,charisma:8,discipline:8},30));
+  }else if(p.events.length){
+    const ev=p.events[0];
+    quests.push(quest("event",`Calendar Mission: ${ev.name}`,`Show up and complete your responsibilities for this scheduled event.`,{discipline:8},20));
+  }else{
+    quests.push(quest("music","Artist Progress","Practice DJing, production, songwriting, outreach, or live sound for 20 focused minutes.",{creativity:10,discipline:5},20));
+  }
+  if(physical){
+    quests.push(quest("fitness","Recovery & Mobility","Rest and optionally complete 5–10 minutes of comfortable mobility. Rest alone satisfies today's recovery plan.",{agility:5,discipline:4},10));
+  }else if(p.busy){
+    quests.push(quest("fitness","Minimum Effective Movement","If recovered and time allows, do 10–20 minutes of mobility or a short workout. Otherwise reschedule training; don't claim an unperformed workout.",{agility:6,discipline:4},10));
+  }else{
+    const names=["Recovery & Mobility","Upper Body + V-Taper","Lower Body + Core","Recovery & Mobility","Full-Body Calisthenics + Mobility","Strength + Accessories","Boxing + Conditioning"];
+    quests.push(quest("fitness",`Fitness: ${names[p.weekday]}`,`Complete your planned ${names[p.weekday].toLowerCase()} session. Adjust volume to recovery and time.`,{strength:8,agility:5,discipline:5},25));
+  }
+  if(!p.busy)quests.push(quest("life","Life Maintenance","Spend 10 focused minutes on school, organization, finances, or a personal goal.",{intellect:5,discipline:8},15));
+  return quests;
+}
+function replanToday(){
+  if(data.daily.date!==todayKey())return;
+  const old=data.daily.quests||[];
+  if(old.some(q=>q.completed)){toast("EXISTING QUEST PROGRESS PRESERVED");return;}
+  data.daily.quests=plannedQuestsForDay();
+  save();renderAll();toast("QUESTS ADAPTED TO CALENDAR");
+}
+function renderAdaptivePlanner(){
+  const p=dayInfo(),el=document.getElementById("adaptivePlanner");if(!el)return;
+  const mode=p.busy?"CAREER / BUSY DAY":p.weekday===3||p.weekday===0?"RECOVERY DAY":"FOCUSED PROGRESSION";
+  const tip=p.busy?"Your calendar takes priority. Complete event work, keep fitness flexible, and log meaningful accomplishments afterward.":p.weekday===3||p.weekday===0?"Rest is part of the program. Mobility is optional; music and life goals can still progress.":"Train efficiently, then spend your remaining time building your music and life goals.";
+  el.innerHTML=`<div class="list-card"><p class="eyebrow">SHADE · ADAPTIVE DAY PLAN</p><strong>${mode}</strong><p class="meta">${tip}</p><p class="meta">${p.classes.length} class(es) · ${p.events.length} calendar event(s) · ${data.daily.quests.length} quests</p><div class="card-actions"><button class="secondary-btn" data-quick-capture>Quick Life Log</button><button class="secondary-btn" data-replan-day>Refresh Plan</button><button class="secondary-btn" data-add="event">+ Calendar Event</button></div></div>`;
+}
+function openQuickCapture(){
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const prev=`${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,"0")}-${String(yesterday.getDate()).padStart(2,"0")}`;
+  openModal("Quick Life Log",`<p class="meta">Log meaningful work in under a minute, including yesterday's achievements. No invented calories, no automatic workout credit, and no penalties for unlogged days.</p>
+    <form id="quickCaptureForm"><div class="form-grid"><div class="field"><label>Date</label><input name="date" type="date" value="${prev}" max="${todayKey()}" required></div><div class="field"><label>Area</label><select name="category"><option>Music</option><option>Live Sound</option><option>Career</option><option>Networking</option><option>School</option><option>Fitness</option><option>Life</option><option>Recovery</option></select></div></div>
+    <div class="field"><label>What did you actually do?</label><textarea name="notes" maxlength="700" required placeholder="Mixed live sound on SQ-7, handled setup and breakdown, met bands and venue leadership..."></textarea></div>
+    <div class="field"><label>Effort</label><select name="effort"><option value="1">Small step</option><option value="2" selected>Meaningful session</option><option value="3">Major milestone</option></select></div>
+    <button class="primary-btn" type="submit">Record Real-Life Progress</button></form>`,'LIFE RPG · HONEST PROGRESS');
+}
+function logLifeCapture(form){
+  const f=new FormData(form),date=String(f.get('date')||''),category=String(f.get('category')||'Life'),notes=String(f.get('notes')||'').trim(),effort=Math.max(1,Math.min(3,Number(f.get('effort'))||1));
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>todayKey()||!notes)return;
+  if(!data.lifeLogs)data.lifeLogs=[];
+  const log={id:uid('life'),date,category,notes:notes.slice(0,700),effort};
+  data.lifeLogs.unshift(log);
+  // Credit is limited, manual, and never silently marks a workout, meal or daily quest complete.
+  const alreadyRewarded=data.lifeLogs.slice(1).some(x=>x.date===date&&x.category===category&&x.rewarded);
+  const xp=alreadyRewarded?0:[0,8,16,25][effort];log.rewarded=xp>0;addXP(xp);
+  const stat=/music|live sound/i.test(category)?'creativity':/career|network/i.test(category)?'charisma':/school/i.test(category)?'intellect':/fitness/i.test(category)?'strength':'discipline';
+  addStat(stat,Math.round(xp*.45));
+  data.timeline.unshift({date,text:`${category}: ${notes.slice(0,110)}`});
+  data.questHistory.unshift({date,title:`Real-life milestone: ${category}`,type:'Life Log',xp});
+  save();closeModal();renderAll();toast(`REAL PROGRESS LOGGED · +${xp} XP`);
+}
 function initDaily(){
   const key=todayKey();
   if(data.daily.date===key && data.daily.quests.length)return;
-  data.daily={...data.daily,date:key,quests:[],clearAwarded:false};
-  const random=rng(seedFromText(key));
-  const qs=[];
-  const classes=todayClasses();
-  if(classes.length){
-    qs.push({id:`${key}_school`,title:classes.length>1?"Attend Today's Classes":"Attend Today's Class",description:classes.length>1?`Attend all ${classes.length} scheduled classes.`:`Attend ${classes[0].name}.`,difficulty:"Normal",xp:20,coins:1,stats:{intellect:12,discipline:10},completed:false});
-  }
-  const make=(arr,id)=>{const [title,description,difficulty,xp,coins,stats]=pick(arr,random);return{id,title,description,difficulty,xp,coins,stats,completed:false};};
-  qs.push(make(questPool.physical,`${key}_physical`));
-  qs.push(make(questPool.intellect,`${key}_intellect`));
-  qs.push(make(questPool.creativity,`${key}_creative`));
-  qs.push(make(questPool.wildcard,`${key}_wild`));
-  if(qs.length<5)qs.push(make([...questPool.intellect,...questPool.wildcard],`${key}_bonus`));
-  data.daily.quests=qs.slice(0,5);
-  const idx=seedFromText(key)%integrityMessages.length;
-  data.daily.integrity=integrityMessages[idx];
-  data.daily.recommendation=shadeMessages[seedFromText(key+"shade")%shadeMessages.length];
+  data.daily={...data.daily,date:key,quests:plannedQuestsForDay(key),clearAwarded:false};
+  data.daily.integrity="Only record what you actually did. Recovery and real-world commitments matter.";
+  data.daily.recommendation="Your calendar guides your quests. Fitness, music, and life progress together.";
 }
 function weekKey(){
   const d=new Date(),tmp=new Date(d.getFullYear(),d.getMonth(),d.getDate());
@@ -658,7 +717,7 @@ function renderHome(){
   const done=data.daily.quests.filter(q=>q.completed).length;setText("dailyQuestComplete",done);setText("dailyQuestTotal",data.daily.quests.length);setText("dailyQuestHeaderCount",`${done} / ${data.daily.quests.length}`);
   document.getElementById("dailyQuestProgress").style.width=`${data.daily.quests.length?done/data.daily.quests.length*100:0}%`;
   setText("mainQuestName","Build the Foundation");const mp=Math.min(100,Math.round((data.player.level/10)*100));setText("mainQuestPercent",`${mp}%`);document.getElementById("mainQuestProgress").style.width=`${mp}%`;
-  renderSchedule();renderDailyQuestList();renderUnlocks();
+  renderSchedule();renderDailyQuestList();renderAdaptivePlanner();renderUnlocks();
 }
 function renderSchedule(){
   const el=document.getElementById("scheduleList");const classes=todayClasses();
@@ -1746,7 +1805,7 @@ function openAdd(type){
       <div class="field"><label>Date / Deadline</label><input name="date" type="date"></div><div class="field"><label>Notes</label><textarea name="notes"></textarea></div>
       <button class="primary-btn" type="submit">Create Quest</button></form>`);
   } else if(type==="event"){
-    openModal("Add Event",`<form id="eventForm"><div class="field"><label>Name</label><input name="name" required></div><div class="form-grid"><div class="field"><label>Date</label><input name="date" type="date" required></div><div class="field"><label>Time</label><input name="time" type="time"></div></div><div class="field"><label>Category</label><input name="category" value="Personal"></div><div class="field"><label>Notes</label><textarea name="notes"></textarea></div><button class="primary-btn">Add Event</button></form>`);
+    openModal("Add Event",`<form id="eventForm"><div class="field"><label>Name</label><input name="name" required></div><div class="form-grid"><div class="field"><label>Date</label><input name="date" type="date" required></div><div class="field"><label>Time</label><input name="time" type="time"></div></div><div class="field"><label>Category</label><select name="category">${LIFE_EVENT_TYPES.map(x=>`<option>${x}</option>`).join("")}</select></div><div class="field"><label>Notes</label><textarea name="notes"></textarea></div><button class="primary-btn">Add Event</button></form>`);
   } else if(type==="workout"){
     ensureTraining();
     if(data.training.activeWorkout)renderActiveWorkout();
@@ -1775,7 +1834,7 @@ function openModule(name){
 }
 function renderCalendarModal(){
   const classes=Object.entries(schedule).flatMap(([day,arr])=>arr.map(x=>({...x,day:Number(day)})));
-  openModal("Calendar",`<button class="small-btn" data-add="event">+ Event</button><div class="list-stack" style="margin-top:12px"><div class="list-card"><strong>Recurring Classes</strong>${classes.map(c=>`<p class="meta">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][c.day]} · ${c.start} · ${esc(c.name)}</p>`).join("")}</div>${data.calendarEvents.map(e=>`<div class="list-card"><strong>${esc(e.name)}</strong><p class="meta">${e.date} · ${e.time||"All Day"} · ${esc(e.category||"Event")}</p></div>`).join("")}</div>`,"CALENDAR");
+  openModal("Calendar",`<button class="small-btn" data-add="event">+ Event</button><button class="small-btn" data-quick-capture>Quick Life Log</button><div class="list-stack" style="margin-top:12px"><div class="list-card"><strong>Recurring Classes</strong>${classes.map(c=>`<p class="meta">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][c.day]} · ${c.start} · ${esc(c.name)}</p>`).join("")}</div>${data.calendarEvents.map(e=>`<div class="list-card"><strong>${esc(e.name)}</strong><p class="meta">${e.date} · ${e.time||"All Day"} · ${esc(e.category||"Event")}</p><button class="secondary-btn" data-remove-event="${esc(e.id)}">Remove</button></div>`).join("")}</div>`,"CALENDAR");
 }
 
 function normalizeExerciseName(name){
@@ -1916,11 +1975,12 @@ function redeemReward(id){
 }
 
 function handleForms(e){
+  if(e.target.id==="quickCaptureForm"){e.preventDefault();logLifeCapture(e.target);return;}
   if(e.target.id==="readinessForm"){e.preventDefault();const f=new FormData(e.target);generateRecommendedWorkout({energy:Number(f.get("energy")),soreness:Number(f.get("soreness")),time:Number(f.get("time"))});renderActiveWorkout();return;}
   if(e.target.id==="historicalWorkoutForm"){e.preventDefault();if(importHistoricalWorkout(e.target)){closeModal();toast("PERFORMANCE IMPORTED · BASELINES UPDATED");}return;}
   if(e.target.id==="skillProgressForm"){e.preventDefault();const f=new FormData(e.target);recordSkillProgress(e.target.dataset.skillId,Number(f.get("minutes")||1),Number(f.get("quality")||2),f.get("result")||"",f.get("notes")||"");closeModal();toast("SKILL PROGRESS RECORDED");return;}
   if(e.target.id==="questForm"){e.preventDefault();const f=new FormData(e.target);data.customQuests.unshift({id:uid("q"),name:f.get("name"),category:f.get("category"),type:f.get("type"),difficulty:f.get("difficulty"),stat:f.get("stat"),date:f.get("date"),notes:f.get("notes"),completed:false});save();closeModal();renderQuestTab("custom");toast("QUEST ADDED");}
-  if(e.target.id==="eventForm"){e.preventDefault();const f=new FormData(e.target);data.calendarEvents.push({id:uid("e"),name:f.get("name"),date:f.get("date"),time:f.get("time"),category:f.get("category"),notes:f.get("notes")});save();closeModal();renderAll();toast("EVENT ADDED");}
+  if(e.target.id==="eventForm"){e.preventDefault();const f=new FormData(e.target);data.calendarEvents.push({id:uid("e"),name:f.get("name"),date:f.get("date"),time:f.get("time"),category:f.get("category"),notes:f.get("notes")});save();closeModal();if(f.get("date")===todayKey())replanToday();renderAll();toast("EVENT ADDED");}
   if(e.target.id==="workoutForm"){e.preventDefault();const f=new FormData(e.target);const mins=Number(f.get("minutes")||30);data.workouts.push({id:uid("w"),name:f.get("name"),minutes:mins,difficulty:f.get("difficulty"),notes:f.get("notes"),date:todayKey()});data.legacy.workouts++;addXP(f.get("difficulty")==="Hard"?40:25);addStat("strength",15);addStat("endurance",10);addStat("discipline",5);progressWeekly("Consistency Protocol");save();closeModal();renderAll();toast("WORKOUT LOGGED");}
   if(e.target.id==="mealForm"){e.preventDefault();const f=new FormData(e.target),p=Number(f.get("protein")||0);data.nutrition.meals.push({name:f.get("name"),protein:p,calories:Number(f.get("calories")||0)});data.nutrition.protein+=p;addStat("discipline",2);save();closeModal();renderAll();toast("MEAL LOGGED");}
   if(e.target.id==="weightForm"){e.preventDefault();const f=new FormData(e.target),w=Number(f.get("weight"));data.body.weight=w;data.body.history.push({date:todayKey(),weight:w});save();closeModal();renderAll();toast("WEIGHT UPDATED");}
@@ -1960,6 +2020,9 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-generate-dungeon]")){generateDungeon();return;}
   const pd=e.target.closest("[data-progress-dungeon]");if(pd){progressDungeon(pd.dataset.progressDungeon);return;}
   const ps=e.target.closest("[data-practice-skill]");if(ps){openSkillProgress(ps.dataset.practiceSkill);return;}
+  if(e.target.closest("[data-quick-capture]")){openQuickCapture();return;}
+  if(e.target.closest("[data-replan-day]")){replanToday();return;}
+  const evdel=e.target.closest("[data-remove-event]");if(evdel){if(confirm("Remove this calendar event?")){data.calendarEvents=data.calendarEvents.filter(x=>x.id!==evdel.dataset.removeEvent);save();replanToday();renderCalendarModal();renderAll();}return;}
   if(e.target.closest("[data-edit-weekly]")){openWeeklyTemplateEditor();return;}
   const tday=e.target.closest("[data-template-day]");if(tday){openWeeklyTemplateEditor(Number(tday.dataset.templateDay));return;}
   const tsave=e.target.closest("[data-template-save]");if(tsave){persistTemplate(Number(tsave.dataset.templateSave),readTemplateEditor(Number(tsave.dataset.templateSave)));toast("WEEKLY TEMPLATE SAVED");return;}
