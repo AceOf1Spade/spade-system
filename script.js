@@ -181,13 +181,13 @@ const exerciseLibrary = [
 ];
 
 const WEEKLY_TRAINING_PROTOCOL = {
-  0:{name:"Recovery / Optional Easy Walk",families:["Mobility","Balance","Core"],intensity:"Recovery"},
-  1:{name:"Upper Body + Conditioning",families:["Push","Pull","Conditioning","Core"],intensity:"Normal"},
-  2:{name:"Lower Body Strength",families:["Legs","Core","Mobility"],intensity:"Normal"},
-  3:{name:"Rest Day · Recovery",families:["Mobility","Balance"],intensity:"Recovery"},
-  4:{name:"Full-Body Calisthenics · V-Taper + Mobility",families:["Pull","Push","Legs","Balance","Mobility","Core"],intensity:"Control"},
-  5:{name:"Upper Body + Full Body Strength",families:["Push","Pull","Legs","Combat","Core","Mobility"],intensity:"Hard"},
-  6:{name:"Conditioning + Boxing",families:["Combat","Conditioning","Mobility","Core"],intensity:"Normal"}
+  0:{name:"Recovery · Full Body C available as Sunday alternative",families:["Mobility"],intensity:"Recovery"},
+  1:{name:"Optional Core + Mobility",families:["Core","Mobility"],intensity:"Recovery"},
+  2:{name:"Full Body A · Strength + Core Focus",families:["Push","Pull","Legs","Core"],intensity:"Normal"},
+  3:{name:"Dedicated Rest Day",families:["Mobility"],intensity:"Recovery"},
+  4:{name:"Full Body B · Calisthenics + Mobility",families:["Pull","Push","Legs","Core","Mobility"],intensity:"Control"},
+  5:{name:"Optional Core + Mobility",families:["Core","Mobility"],intensity:"Recovery"},
+  6:{name:"Full Body C · Strength + Athleticism",families:["Push","Pull","Legs","Core","Combat"],intensity:"Normal"}
 };
 
 // Structured templates preserve the user's training split and session sequence.
@@ -257,6 +257,59 @@ const SPADE_EFFICIENT_TEMPLATES={
 };
 Object.assign(SPADE_STRUCTURED_DAYS,SPADE_EFFICIENT_TEMPLATES);
 const SPADE_TRAINING_MINUTES={0:10,1:45,2:40,3:10,4:50,5:40,6:30};
+// V1.9: Three nonconsecutive full-body sessions, with flexible event-day swaps.
+// Rest-day custom templates are retained in the save but not used as hard workouts.
+const SPADE_THREE_DAY_TEMPLATES={
+  0:[["Optional Recovery",[["cat_cow",1,8],["hip_9090",1,10],["cool_breath",1,5]]]],
+  1:[
+    ["Warm-Up",[["warm_easy_cardio",1,180],["warm_arm_circles",1,10]]],
+    ["Pull · V-Taper",[["pullup",3,5],["db_chest_supported_row",2,10]]],
+    ["Push · Shoulders + Chest",[["dumbbell_bench_press",3,10],["db_overhead_press",2,10]]],
+    ["Legs · Strength",[["goblet_squat",3,10],["db_rdl",2,10]]],
+    ["Inside · Core",[["bench_garhammer",2,10],["side_plank",2,25]]],
+    ["Inside · Mobility",[["shoulder_cars",1,5],["hip_9090",1,10]]],
+    ["Cooldown",[["cool_breath",1,5]]]
+  ],
+  2:[["Optional Mobility",[["shoulder_cars",1,5],["hip_9090",1,10],["cool_breath",1,5]]]],
+  3:[["Rest / Optional Gentle Mobility",[["cat_cow",1,8],["cool_breath",1,5]]]],
+  4:[
+    ["Warm-Up",[["warm_easy_cardio",1,180],["warm_scapular_pullup",1,8]]],
+    ["Pull · V-Taper",[["pullup",3,5],["db_chest_supported_row",2,10]]],
+    ["Push · Shoulders + Chest",[["pushup",3,10],["pike_pushup",2,8]]],
+    ["Legs · Bodyweight Control",[["squat",3,12],["reverse_lunge",2,8]]],
+    ["Skills · Control + Balance",[["passive_hang",2,20]]],
+    ["Inside · Core",[["knee_raise",2,10],["hollow_hold",2,20]]],
+    ["Inside · Mobility",[["shoulder_cars",1,5],["hip_cars",1,5],["hip_9090",1,10],["frog_rocks",1,10]]],
+    ["Cooldown",[["cool_lat",1,30]]]
+  ],
+  5:[["Optional Mobility",[["cat_cow",1,8],["hip_9090",1,10],["cool_breath",1,5]]]],
+  6:[
+    ["Warm-Up",[["warm_easy_cardio",1,180],["warm_arm_circles",1,10]]],
+    ["Legs · Strength",[["goblet_squat",3,10],["db_rdl",2,10]]],
+    ["Pull · V-Taper",[["chinup",3,5],["db_chest_supported_row",2,10]]],
+    ["Push · Shoulders + Chest",[["dumbbell_bench_press",3,10],["dumbbell_lateral_raise",2,12]]],
+    ["Inside · Core",[["bench_reverse_crunch",2,12],["side_plank",2,25]]],
+    ["Athletic Finisher",[["bag_open_round",2,45]]],
+    ["Inside · Mobility",[["thoracic_rotations",1,6],["hip_9090",1,10]]],
+    ["Cooldown",[["cool_breath",1,5]]]
+  ]
+};
+Object.assign(SPADE_STRUCTURED_DAYS,SPADE_THREE_DAY_TEMPLATES);
+Object.assign(SPADE_TRAINING_MINUTES,{0:10,1:50,2:10,3:10,4:50,5:10,6:45});
+// V2.0: Tuesday/Thursday/Saturday strength, Sunday alternate, optional short core Monday/Friday.
+SPADE_STRUCTURED_DAYS[2]=JSON.parse(JSON.stringify(SPADE_THREE_DAY_TEMPLATES[1]));
+// V2.0.1: Tuesday is a true full-body day with an extra, focused abdominal block.
+// Three movements cover pelvic curl and lateral trunk stability without needing a decline bench.
+SPADE_STRUCTURED_DAYS[2]=SPADE_STRUCTURED_DAYS[2].map(([phase,entries])=>
+  phase==="Inside · Core"?["Inside · Core Focus",[["bench_garhammer",3,10],["bench_reverse_crunch",2,12],["side_plank",2,25]]]:[phase,entries]
+);
+
+SPADE_STRUCTURED_DAYS[1]=[["Optional Core",[["bench_garhammer",2,10],["side_plank",2,25]]],["Mobility",[["hip_9090",1,10],["shoulder_cars",1,5]]]];
+SPADE_STRUCTURED_DAYS[5]=[["Optional Core",[["bench_reverse_crunch",2,12],["dead_bug",2,8]]],["Mobility",[["thoracic_rotations",1,6],["hip_9090",1,10]]]];
+SPADE_STRUCTURED_DAYS[0]=[["Recovery / Easy Mobility",[["cat_cow",1,8],["hip_9090",1,10],["cool_breath",1,5]]]];
+Object.assign(SPADE_TRAINING_MINUTES,{0:10,1:12,2:50,5:12});
+const SPADE_LIFT_DAYS=[2,4,6];
+const SPADE_SESSION_NAMES={2:"Full Body A · Strength + Core Focus",4:"Full Body B · Calisthenics + Mobility",6:"Full Body C · Strength + Athleticism"};
 const SPADE_WEEKDAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 function weeklyTemplates(){
   ensureTraining();
@@ -265,7 +318,7 @@ function weeklyTemplates(){
 }
 function templateForDay(day){
   const saved=weeklyTemplates()[day];
-  return Array.isArray(saved)?saved:SPADE_STRUCTURED_DAYS[day];
+  return SPADE_LIFT_DAYS.includes(Number(day))&&Array.isArray(saved)?saved:SPADE_STRUCTURED_DAYS[day];
 }
 function templateCatalog(){
   return [...exerciseLibrary,...Object.values(TRAINING_PHASE_LIBRARY).flat()]
@@ -278,7 +331,7 @@ function openWeeklyTemplateEditor(day=new Date().getDay()){
   const catalog=templateCatalog();
   const options=catalog.map(e=>`<option value="${esc(e.id)}">${esc(e.name)} · ${esc(e.family)}${isExerciseUnlocked(e)?"":" (locked)"}</option>`).join("");
   openModal("Weekly Training Templates",`
-    <p class="meta">Edit your plan without changing completed workout history. V1.8 defaults are shorter; saved custom templates remain yours. Changes apply to newly generated sessions, not the workout already in progress.</p>
+    <p class="meta">Edit your plan without changing completed workout history. V2.0.2 defaults use full-body strength on Tuesday, Thursday, and Saturday (or Sunday as a replacement). Monday and Friday offer optional short core. Saved custom templates remain yours. Old Tuesday customizations may still reflect the previous lower-body plan; tap Restore Default for Tuesday to switch. Changes apply to newly generated sessions, not the workout already in progress.</p>
     <div class="card-actions">${SPADE_WEEKDAYS.map((name,i)=>`<button class="${i===day?"primary-btn":"secondary-btn"}" data-template-day="${i}">${name.slice(0,3)}</button>`).join("")}</div>
     <div class="list-card"><strong>${SPADE_WEEKDAYS[day]} · ${esc(WEEKLY_TRAINING_PROTOCOL[day].name)}</strong><p class="meta">${day===3?"Rest day: optional easy recovery only.":day===0?"Optional recovery only.":"Training order follows the phases below."}</p></div>
     <div class="list-stack">${groups.map(([phase,entries],gi)=>`
@@ -625,7 +678,7 @@ function plannedQuestsForDay(date=todayKey()){
   const p=dayInfo(date),id=x=>`${date}_adaptive_${x}`;
   const quest=(key,title,description,stats,xp=15)=>({id:id(key),title,description,difficulty:"Normal",xp,coins:1,stats,completed:false});
   const quests=[];
-  const physical=p.weekday===3||p.weekday===0;
+  const physical=!SPADE_LIFT_DAYS.includes(p.weekday);
   if(p.classes.length)quests.push(quest("class","Show Up for Class",`Attend your scheduled class${p.classes.length>1?"es":""} or complete the required class work.`,{intellect:10,discipline:6},20));
   if(p.demanding.length){
     const ev=p.demanding[0];
@@ -641,7 +694,7 @@ function plannedQuestsForDay(date=todayKey()){
   }else if(p.busy){
     quests.push(quest("fitness","Minimum Effective Movement","If recovered and time allows, do 10–20 minutes of mobility or a short workout. Otherwise reschedule training; don't claim an unperformed workout.",{agility:6,discipline:4},10));
   }else{
-    const names=["Recovery & Mobility","Upper Body + V-Taper","Lower Body + Core","Recovery & Mobility","Full-Body Calisthenics + Mobility","Strength + Accessories","Boxing + Conditioning"];
+    const names=["Recovery & Mobility","Optional Core + Mobility","Full Body A · Strength + V-Taper","Recovery & Mobility","Full Body B · Calisthenics + Mobility","Optional Core + Mobility","Full Body C · Strength + Athleticism"];
     quests.push(quest("fitness",`Fitness: ${names[p.weekday]}`,`Complete your planned ${names[p.weekday].toLowerCase()} session. Adjust volume to recovery and time.`,{strength:8,agility:5,discipline:5},25));
   }
   if(!p.busy)quests.push(quest("life","Life Maintenance","Spend 10 focused minutes on school, organization, finances, or a personal goal.",{intellect:5,discipline:8},15));
@@ -659,8 +712,8 @@ function replanToday(){
 }
 function renderAdaptivePlanner(){
   const p=dayInfo(),el=document.getElementById("adaptivePlanner");if(!el)return;
-  const mode=p.busy?"CAREER / BUSY DAY":p.weekday===3||p.weekday===0?"RECOVERY DAY":"FOCUSED PROGRESSION";
-  const tip=p.busy?"Your calendar takes priority. Complete event work, keep fitness flexible, and log meaningful accomplishments afterward.":p.weekday===3||p.weekday===0?"Rest is part of the program. Mobility is optional; music and life goals can still progress.":"Train efficiently, then spend your remaining time building your music and life goals.";
+  const mode=p.busy?"CAREER / BUSY DAY":!SPADE_LIFT_DAYS.includes(p.weekday)?"MUSIC / RECOVERY DAY":"FULL-BODY TRAINING DAY";
+  const tip=p.busy?"Your calendar takes priority. Complete event work, keep fitness flexible, and log meaningful accomplishments afterward.":!SPADE_LIFT_DAYS.includes(p.weekday)?"Three full-body sessions: Tuesday (core-focused), Thursday, and Saturday or Sunday. Optional Monday/Friday core is not required, especially if sore.":"Train efficiently, then spend your remaining time building your music and life goals.";
   el.innerHTML=`<div class="list-card"><p class="eyebrow">SHADE · ADAPTIVE DAY PLAN</p><strong>${mode}</strong><p class="meta">${tip}</p><p class="meta">${p.classes.length} class(es) · ${p.events.length} calendar event(s) · ${data.daily.quests.length} quests · ${(data.lifeLogs||[]).filter(x=>x.date===todayKey()).length} life logs</p><div class="card-actions"><button class="secondary-btn" data-quick-capture>Quick Life Log</button><button class="secondary-btn" data-life-history>Life History</button><button class="secondary-btn" data-replan-day>Refresh Plan</button><button class="secondary-btn" data-add="event">+ Calendar Event</button></div></div>`;
 }
 function openLifeHistory(){
@@ -1529,7 +1582,7 @@ function spadeStructuredWorkout(day,readiness){
   const seen=new Set();
   const exercises=[];
   groups.forEach(([phase,entries],groupIndex)=>{
-    const cap=customized?entries.length:Math.max(1,Math.min(entries.length,Math.ceil(entries.length*ratio)));
+    const cap=(customized||day===2&&phase==="Inside · Core Focus")?entries.length:Math.max(1,Math.min(entries.length,Math.ceil(entries.length*ratio)));
     entries.slice(0,cap).forEach(([id,sets,target])=>{
       const item=spadeTemplateExercise(id,phase,sets,target,readiness);
       if(!item)return;
@@ -1548,9 +1601,9 @@ function spadeStructuredWorkout(day,readiness){
 }
 function generateRecommendedWorkout(readiness){
   ensureTraining();
-  const day=new Date().getDay();
+  const day=Number(readiness.sessionDay??new Date().getDay());
   const protocol=WEEKLY_TRAINING_PROTOCOL[day];
-  const state=(day===3||day===0)?"Recovery":readinessLabel(readiness);
+  const state=(SPADE_LIFT_DAYS.includes(day)||[1,5].includes(day))?readinessLabel(readiness):"Recovery";
   const profile=timeProfile(readiness.time);
   let name=protocol.name;
 
@@ -1630,6 +1683,11 @@ function openReadinessCheck(){
         <option value="0">0 · Fresh</option><option value="1" selected>1 · Mild</option><option value="2">2 · Noticeable</option><option value="3">3 · Very Sore</option>
       </select></div>
     </div>
+    <div class="field"><label>Today's Session</label><select name="sessionDay">
+      <option value="${new Date().getDay()}">${SPADE_LIFT_DAYS.includes(new Date().getDay())?"Scheduled: "+SPADE_SESSION_NAMES[new Date().getDay()]:"Recovery / No scheduled lifting"}</option>
+      ${SPADE_LIFT_DAYS.filter(d=>d!==new Date().getDay()).map(d=>`<option value="${d}">${new Date().getDay()===0&&d===6?"Sunday alternative":"Choose"}: ${SPADE_SESSION_NAMES[d]}</option>`).join("")}
+      ${[1,5].includes(new Date().getDay())?"":`<option value="1">Optional 10–12 min Core + Mobility</option>`}
+    </select><p class="meta">If a gig changes your week, choose the missed session here. Avoid stacking hard full-body sessions on consecutive days.</p></div>
     <div class="field"><label>Time Available</label><select name="time">${[15,20,30,40,45,50,60,75,90].map(n=>`<option value="${n}" ${n===(dayInfo().busy?20:SPADE_TRAINING_MINUTES[new Date().getDay()]||45)?"selected":""}>${n} min</option>`).join("")}</select></div>
     <button class="primary-btn" type="submit">Generate Today's Training</button>
   </form>`,"TRAINING ENGINE");
@@ -1809,7 +1867,7 @@ function trainingSummaryHtml(){
       <div class="quick-card"><span class="quick-label">TRAINING TIER</span><strong class="quick-value">${tier}</strong><span class="quick-subtext">${data.training.completedSessions} sessions</span></div>
       <div class="quick-card"><span class="quick-label">TECHNIQUES</span><strong class="quick-value">${unlocked}</strong><span class="quick-subtext">${exerciseLibrary.length} total</span></div>
     </div>
-    <div class="list-card"><p class="eyebrow">TODAY'S BASE PROTOCOL</p><strong>${esc(protocol.name)}</strong><p class="meta">Wednesday is rest; Thursday is full-body calisthenics, V-taper + mobility; Friday is upper/full-body strength; Saturday is boxing + conditioning. SHADE scales the session to readiness and time.</p></div>
+    <div class="list-card"><p class="eyebrow">TODAY'S BASE PROTOCOL</p><strong>${esc(protocol.name)}</strong><p class="meta">Tuesday: full-body strength + core focus. Thursday: full-body calisthenics + mobility. Saturday OR Sunday: full-body strength + athleticism. Monday/Friday: optional short core. Wednesday: rest. Busy event days can use a shorter or moved session.</p><p class="meta">${Array.isArray(weeklyTemplates()[new Date().getDay()])?"Custom workout template saved for today. Restore Default in Weekly Templates to use the latest plan.":"Using the current default workout template."}</p></div>
   </div>`;
 }
 function openModal(title,html,eyebrow="SYSTEM INPUT"){
@@ -1952,11 +2010,11 @@ function renderFitnessModal(){
   ensureTraining();
   const hist=data.body.history.slice(-6).reverse();
   const recent=data.workouts.slice(-6).reverse();
-  const recoveryActive=isRecoveryDay()||new Date().getDay()===3;
-  openModal("Fitness & Training",`${trainingSummaryHtml()}
+  const recoveryActive=isRecoveryDay()||(!SPADE_LIFT_DAYS.includes(new Date().getDay())&&![0,1,5].includes(new Date().getDay()));
+  openModal("Fitness & Training",`<p class="meta">TRAINING PLAN · v2.0.2 · Tue / Thu / Sat or Sun</p>${trainingSummaryHtml()}
     ${recoveryActive?`<div class="list-card recovery-status-card"><div class="row-between"><div><p class="eyebrow">SYSTEM STATUS</p><strong>RECOVERY PROTOCOL ACTIVE</strong></div><span class="tag">REST DAY</span></div><p class="meta">No hard training today. Light mobility or an easy walk is enough. Hydration, protein, and sleep count as the mission.</p></div>`:""}
     <div class="card-actions training-main-actions">
-      ${recoveryActive?`<button class="primary-btn" data-go="quests">View Recovery Quest</button>`:`<button class="primary-btn" data-start-training>${data.training.activeWorkout?"Resume Workout":"Start Today's Training"}</button><button class="secondary-btn" data-activate-recovery>Recovery Day</button>`}
+      ${recoveryActive?`<button class="primary-btn" data-go="quests">View Recovery Quest</button><button class="secondary-btn" data-start-training>Move / Start Full-Body Session</button>`:`<button class="primary-btn" data-start-training>${data.training.activeWorkout?"Resume Workout":"Start Today's Training"}</button><button class="secondary-btn" data-activate-recovery>Recovery Day</button>`}
       <button class="secondary-btn" data-edit-weekly>Weekly Templates</button><button class="secondary-btn" data-add="weight">Log Weight</button><button class="secondary-btn" data-import-performance>Import Previous Workout</button><button class="secondary-btn" data-performance-history>Performance History</button>
     </div>
     <div class="panel training-unlocks-panel">
@@ -2004,7 +2062,7 @@ function redeemReward(id){
 
 function handleForms(e){
   if(e.target.id==="quickCaptureForm"){e.preventDefault();logLifeCapture(e.target);return;}
-  if(e.target.id==="readinessForm"){e.preventDefault();const f=new FormData(e.target);generateRecommendedWorkout({energy:Number(f.get("energy")),soreness:Number(f.get("soreness")),time:Number(f.get("time"))});renderActiveWorkout();return;}
+  if(e.target.id==="readinessForm"){e.preventDefault();const f=new FormData(e.target);generateRecommendedWorkout({energy:Number(f.get("energy")),soreness:Number(f.get("soreness")),time:Number(f.get("time")),sessionDay:Number(f.get("sessionDay"))});renderActiveWorkout();return;}
   if(e.target.id==="historicalWorkoutForm"){e.preventDefault();if(importHistoricalWorkout(e.target)){closeModal();toast("PERFORMANCE IMPORTED · BASELINES UPDATED");}return;}
   if(e.target.id==="skillProgressForm"){e.preventDefault();const f=new FormData(e.target);recordSkillProgress(e.target.dataset.skillId,Number(f.get("minutes")||1),Number(f.get("quality")||2),f.get("result")||"",f.get("notes")||"");closeModal();toast("SKILL PROGRESS RECORDED");return;}
   if(e.target.id==="questForm"){e.preventDefault();const f=new FormData(e.target);data.customQuests.unshift({id:uid("q"),name:f.get("name"),category:f.get("category"),type:f.get("type"),difficulty:f.get("difficulty"),stat:f.get("stat"),date:f.get("date"),notes:f.get("notes"),completed:false});save();closeModal();renderQuestTab("custom");toast("QUEST ADDED");}
